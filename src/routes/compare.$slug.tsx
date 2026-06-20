@@ -30,6 +30,17 @@ function CompareDetail() {
   const a = useQuery({ queryKey: ["tool", aSlug], queryFn: async () => (await Q.toolBySlug(aSlug)).data });
   const b = useQuery({ queryKey: ["tool", bSlug], queryFn: async () => (await Q.toolBySlug(bSlug)).data });
 
+  const featuresA = useQuery({
+    enabled: !!a.data?.id,
+    queryKey: ["tool", aSlug, "features"],
+    queryFn: async () => (await Q.toolFeatures(a.data!.id)).data ?? [],
+  });
+  const featuresB = useQuery({
+    enabled: !!b.data?.id,
+    queryKey: ["tool", bSlug, "features"],
+    queryFn: async () => (await Q.toolFeatures(b.data!.id)).data ?? [],
+  });
+
   if (a.isLoading || b.isLoading) return <div className="mx-auto max-w-5xl px-4 py-20">Loading…</div>;
   if (!a.data || !b.data) return (
     <div className="mx-auto max-w-5xl px-4 py-20 text-center">
@@ -38,13 +49,17 @@ function CompareDetail() {
     </div>
   );
 
+  const getPricingAvailability = (pricing: string) => {
+    return ["free", "freemium"].includes((pricing || "").toLowerCase()) ? "Yes" : "No";
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <Link to="/compare" className="text-sm text-muted-foreground hover:text-foreground">← All comparisons</Link>
       <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
         {a.data.name} <span className="text-muted-foreground">vs</span> {b.data.name}
       </h1>
-      <p className="mt-2 text-muted-foreground">A side-by-side comparison of features, pricing, and ratings.</p>
+      <p className="mt-2 text-muted-foreground">A side-by-side comparison of features, pricing, and capabilities.</p>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         <Card tool={a.data} />
@@ -52,42 +67,167 @@ function CompareDetail() {
       </div>
 
       <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-surface text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="w-1/3 px-5 py-3 text-left font-semibold">Specification</th>
-              <th className="px-5 py-3 text-left font-semibold">{a.data.name}</th>
-              <th className="px-5 py-3 text-left font-semibold">{b.data.name}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <Row label="Rating" a={`★ ${Number(a.data.rating).toFixed(1)}`} b={`★ ${Number(b.data.rating).toFixed(1)}`} highlight={a.data.rating > b.data.rating ? "a" : a.data.rating < b.data.rating ? "b" : null} />
-            <Row label="Reviews" a={String(a.data.review_count)} b={String(b.data.review_count)} />
-            <Row label="Pricing" a={a.data.pricing} b={b.data.pricing} />
-            <Row label="Category" a={a.data.category?.name ?? "—"} b={b.data.category?.name ?? "—"} />
-            <Row label="Verified" a={a.data.verified ? "Yes" : "No"} b={b.data.verified ? "Yes" : "No"} />
-            <Row label="Platforms" a={(a.data.platforms ?? []).join(", ") || "—"} b={(b.data.platforms ?? []).join(", ") || "—"} />
-            <Row label="Popularity" a={Intl.NumberFormat("en", { notation: "compact" }).format(a.data.views)} b={Intl.NumberFormat("en", { notation: "compact" }).format(b.data.views)} highlight={a.data.views > b.data.views ? "a" : a.data.views < b.data.views ? "b" : null} />
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        {[a.data, b.data].map((t) => (
-          <div key={t.id} className="rounded-xl border border-border bg-card p-6">
-            <h3 className="mb-4 font-display font-bold">{t.name} — Pros & Cons</h3>
-            {t.pros && t.pros.length > 0 && (
-              <ul className="mb-4 space-y-1.5">
-                {t.pros.map((p, i) => <li key={i} className="flex gap-2 text-sm"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{p}</li>)}
-              </ul>
-            )}
-            {t.cons && t.cons.length > 0 && (
-              <ul className="space-y-1.5">
-                {t.cons.map((p, i) => <li key={i} className="flex gap-2 text-sm"><X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />{p}</li>)}
-              </ul>
-            )}
-          </div>
-        ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm table-fixed min-w-[650px]">
+            <thead className="bg-surface text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="w-1/4 px-5 py-4 text-left font-semibold">Specification</th>
+                <th className="px-5 py-4 text-left font-semibold">{a.data.name}</th>
+                <th className="px-5 py-4 text-left font-semibold">{b.data.name}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <Row
+                label="Main usecase"
+                a={<p className="text-muted-foreground leading-relaxed text-sm">{a.data.short_description}</p>}
+                b={<p className="text-muted-foreground leading-relaxed text-sm">{b.data.short_description}</p>}
+              />
+              <Row
+                label="Category"
+                a={a.data.category?.name ?? "—"}
+                b={b.data.category?.name ?? "—"}
+              />
+              <Row
+                label="Pricing"
+                a={
+                  <div>
+                    <span className="capitalize font-semibold text-foreground">{a.data.pricing}</span>
+                    {a.data.pricing_details && (
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{a.data.pricing_details}</p>
+                    )}
+                  </div>
+                }
+                b={
+                  <div>
+                    <span className="capitalize font-semibold text-foreground">{b.data.pricing}</span>
+                    {b.data.pricing_details && (
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{b.data.pricing_details}</p>
+                    )}
+                  </div>
+                }
+              />
+              <Row
+                label="Free plan"
+                a={getPricingAvailability(a.data.pricing)}
+                b={getPricingAvailability(b.data.pricing)}
+              />
+              <Row
+                label="Key features"
+                a={
+                  featuresA.isLoading ? (
+                    <span className="text-muted-foreground text-xs">Loading features…</span>
+                  ) : featuresA.data && featuresA.data.length > 0 ? (
+                    <ul className="list-disc pl-4 space-y-1 text-muted-foreground text-sm">
+                      {featuresA.data.map((f) => (
+                        <li key={f.id}>{f.feature}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">None listed</span>
+                  )
+                }
+                b={
+                  featuresB.isLoading ? (
+                    <span className="text-muted-foreground text-xs">Loading features…</span>
+                  ) : featuresB.data && featuresB.data.length > 0 ? (
+                    <ul className="list-disc pl-4 space-y-1 text-muted-foreground text-sm">
+                      {featuresB.data.map((f) => (
+                        <li key={f.id}>{f.feature}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">None listed</span>
+                  )
+                }
+              />
+              <Row
+                label="Strengths"
+                a={
+                  a.data.pros && a.data.pros.length > 0 ? (
+                    <ul className="space-y-1.5 text-muted-foreground text-sm">
+                      {a.data.pros.map((p, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+                b={
+                  b.data.pros && b.data.pros.length > 0 ? (
+                    <ul className="space-y-1.5 text-muted-foreground text-sm">
+                      {b.data.pros.map((p, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+              />
+              <Row
+                label="Limitations"
+                a={
+                  a.data.cons && a.data.cons.length > 0 ? (
+                    <ul className="space-y-1.5 text-muted-foreground text-sm">
+                      {a.data.cons.map((c, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+                b={
+                  b.data.cons && b.data.cons.length > 0 ? (
+                    <ul className="space-y-1.5 text-muted-foreground text-sm">
+                      {b.data.cons.map((c, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+              />
+              <Row
+                label="Official website"
+                a={
+                  <a
+                    href={a.data.website_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 text-xs font-semibold text-foreground shadow-xs hover:bg-accent transition-colors"
+                  >
+                    Visit website <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                }
+                b={
+                  <a
+                    href={b.data.website_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 text-xs font-semibold text-foreground shadow-xs hover:bg-accent transition-colors"
+                  >
+                    Visit website <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                }
+              />
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -125,12 +265,12 @@ function Card({ tool }: { tool: Tool }) {
   );
 }
 
-function Row({ label, a, b, highlight }: { label: string; a: string; b: string; highlight?: "a" | "b" | null }) {
+function Row({ label, a, b, highlight }: { label: string; a: React.ReactNode; b: React.ReactNode; highlight?: "a" | "b" | null }) {
   return (
     <tr className="border-t border-border">
-      <td className="px-5 py-3 text-muted-foreground">{label}</td>
-      <td className={`px-5 py-3 font-medium ${highlight === "a" ? "text-primary" : ""}`}>{a}</td>
-      <td className={`px-5 py-3 font-medium ${highlight === "b" ? "text-primary" : ""}`}>{b}</td>
+      <td className="px-5 py-4 text-muted-foreground align-top font-medium w-1/4">{label}</td>
+      <td className={`px-5 py-4 align-top font-medium ${highlight === "a" ? "text-primary font-semibold" : ""}`}>{a}</td>
+      <td className={`px-5 py-4 align-top font-medium ${highlight === "b" ? "text-primary font-semibold" : ""}`}>{b}</td>
     </tr>
   );
 }

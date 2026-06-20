@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Menu, X, LogIn, Plus, Sparkles } from "lucide-react";
+import { Search, Menu, X, LogIn, Plus, Sparkles, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -106,42 +106,92 @@ export function Header() {
       </div>
 
       {open && (
-        <div className="space-y-3 border-t border-border bg-background px-4 py-4 md:hidden">
+        <div className="flex flex-col gap-4 border-t border-border bg-background px-4 py-4 md:hidden">
+          {/* Search Bar */}
           <form onSubmit={onSubmit} className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search AI tools…"
-              className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm"
+              className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </form>
-          {nav.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="block rounded-md px-2 py-2 text-sm font-medium"
-              onClick={() => setOpen(false)}
-            >
-              {n.label}
-            </Link>
-          ))}
-          <div className="flex items-center justify-between pt-2">
-            <ThemeToggle />
-            {user ? (
-              <Link to="/dashboard" onClick={() => setOpen(false)}>
-                <Button size="sm">Dashboard</Button>
+
+          {/* Navigation Links */}
+          <nav className="flex flex-col gap-1">
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Explore
+            </div>
+            {nav.map((n) => (
+              <Link
+                key={n.to}
+                to={n.to}
+                className="block rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                activeProps={{ className: "block rounded-md px-2 py-2 text-sm font-semibold text-foreground bg-accent/40" }}
+                onClick={() => setOpen(false)}
+              >
+                {n.label}
               </Link>
-            ) : (
-              <div className="flex gap-2">
-                <Link to="/auth" onClick={() => setOpen(false)}>
-                  <Button variant="outline" size="sm">Sign in</Button>
+            ))}
+            <Link
+              to="/submit"
+              onClick={(e) => {
+                handleSubmitClick(e);
+                setOpen(false);
+              }}
+              className="flex items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" /> Submit a Tool
+            </Link>
+          </nav>
+
+          <hr className="border-border my-1" />
+
+          {/* Account / Auth Actions */}
+          <div>
+            {user ? (
+              <div className="flex flex-col gap-1">
+                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Account ({user.email?.split("@")[0]})
+                </div>
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                  onClick={() => setOpen(false)}
+                >
+                  <User className="h-4 w-4" /> Dashboard & Profile
                 </Link>
-                <Link to="/auth" search={{ tab: "signup" }} onClick={() => setOpen(false)}>
-                  <Button size="sm">Get started</Button>
+                <button
+                  onClick={() => {
+                    signOut();
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                >
+                  <LogOut className="h-4 w-4" /> Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 pt-1">
+                <Link to="/auth" onClick={() => setOpen(false)} className="w-full">
+                  <Button variant="outline" className="w-full justify-center gap-2">
+                    <LogIn className="h-4 w-4" /> Sign in
+                  </Button>
+                </Link>
+                <Link to="/auth" search={{ tab: "signup" }} onClick={() => setOpen(false)} className="w-full">
+                  <Button className="w-full justify-center">
+                    Get started
+                  </Button>
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-between border-t border-border pt-3 mt-1">
+            <span className="text-sm font-medium text-muted-foreground">Theme</span>
+            <ThemeToggle />
           </div>
         </div>
       )}

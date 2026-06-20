@@ -37,6 +37,7 @@ function ToolsPage() {
   const [sort, setSort] = useState<SortKey>("rating");
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [pricing, setPricing] = useState<string | undefined>(undefined);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await Q.categories()).data ?? [] });
   const tools = useQuery({
@@ -51,9 +52,21 @@ function ToolsPage() {
         <p className="mt-2 text-muted-foreground">Filter and discover the right tool for the job.</p>
       </div>
 
+      {/* Mobile filter toggle */}
+      <div className="lg:hidden mb-4">
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2"
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+        >
+          <Filter className="h-4 w-4" />
+          {showMobileFilters ? "Hide Filters" : "Show Filters & Sorting"}
+        </Button>
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
+        <aside className={`space-y-6 lg:block lg:sticky lg:top-20 lg:self-start ${showMobileFilters ? "block" : "hidden"}`}>
           <FilterGroup label="Sort by">
             <div className="flex flex-col gap-1">
               {SORTS.map((s) => (

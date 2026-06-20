@@ -101,6 +101,92 @@ function SubmitPage() {
     if (!parsed.success) return toast.error(parsed.error.issues[0]?.message ?? "Check the form");
 
     setLoading(true);
+
+    try {
+      const host = new URL(parsed.data.website_url).hostname.replace(/^www\./, "").toLowerCase();
+      const slug = meta.suggested_slug || host.split(".")[0].replace(/[^a-z0-9-]/g, "-");
+      const normalizedInputName = parsed.data.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+      // 1. Check existing tools
+      const { data: tools } = await supabase
+        .from("tools")
+        .select("id, name, slug, website_url");
+
+      if (tools) {
+        for (const t of tools) {
+          let tHost = "";
+          try {
+            tHost = new URL(t.website_url).hostname.replace(/^www\./, "").toLowerCase();
+          } catch {
+            tHost = t.website_url.toLowerCase();
+          }
+          const tSlug = t.slug;
+          const normalizedTName = t.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+          if (normalizedTName === normalizedInputName) {
+            toast.error(`Duplicate name: "${t.name}" is already in the directory.`);
+            setLoading(false);
+            return;
+          }
+          if (tSlug === slug) {
+            toast.error(`Duplicate slug: A tool with slug "${tSlug}" already exists.`);
+            setLoading(false);
+            return;
+          }
+          if (tHost === host) {
+            toast.error(`Duplicate domain: "${host}" is already registered.`);
+            setLoading(false);
+            return;
+          }
+          if (normalizedInputName.length > 3 && normalizedTName.length > 3 &&
+              (normalizedInputName.includes(normalizedTName) || normalizedTName.includes(normalizedInputName))) {
+            toast.error(`Duplicate: A very similar tool named "${t.name}" already exists.`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // 2. Check pending submissions
+      const { data: submissions } = await supabase
+        .from("submissions")
+        .select("id, name, website_url")
+        .eq("status", "pending");
+
+      if (submissions) {
+        for (const s of submissions) {
+          let sHost = "";
+          try {
+            sHost = new URL(s.website_url).hostname.replace(/^www\./, "").toLowerCase();
+          } catch {
+            sHost = s.website_url.toLowerCase();
+          }
+          const normalizedSName = s.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+          if (normalizedSName === normalizedInputName) {
+            toast.error(`Duplicate name: "${s.name}" is already pending review.`);
+            setLoading(false);
+            return;
+          }
+          if (sHost === host) {
+            toast.error(`Duplicate domain: "${host}" is already pending review.`);
+            setLoading(false);
+            return;
+          }
+          if (normalizedInputName.length > 3 && normalizedSName.length > 3 &&
+              (normalizedInputName.includes(normalizedSName) || normalizedSName.includes(normalizedInputName))) {
+            toast.error(`Duplicate: A very similar tool named "${s.name}" is already pending review.`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (e: any) {
+      toast.error(`Validation error: ${e.message}`);
+      setLoading(false);
+      return;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("submissions").insert({
       ...parsed.data,

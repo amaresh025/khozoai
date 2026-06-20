@@ -81,7 +81,7 @@
   --ring: oklch(0.55 0.22 264);
 
   --brand: oklch(0.55 0.22 264);              /* blue */
-  --brand-2: oklch(0.55 0.26 295);            /* violet #7C3AED */
+  --brand-2: oklch(0.45 0.16 264);            /* corporate dark blue */
 
   --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -146,9 +146,7 @@
   .shadow-card { box-shadow: var(--shadow-sm); }
   .shadow-card-lg { box-shadow: var(--shadow-lg); }
   .glass {
-    background: color-mix(in oklab, var(--background) 80%, transparent);
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    background-color: var(--color-background);
     border-bottom: 1px solid var(--color-border);
   }
   .card-hover {

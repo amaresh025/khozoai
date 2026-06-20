@@ -102,7 +102,7 @@ function AuthPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <div className="text-center">
-        <span className="inline-grid place-items-center h-12 w-12 rounded-2xl bg-gradient-brand shadow-glow">
+        <span className="inline-grid place-items-center h-12 w-12 rounded-2xl bg-gradient-brand shadow-sm">
           <Sparkles className="h-6 w-6 text-white" />
         </span>
         <h1 className="font-display text-3xl font-bold mt-4">

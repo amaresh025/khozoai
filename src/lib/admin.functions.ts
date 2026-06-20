@@ -209,17 +209,39 @@ export const bulkImport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertEditor(context.supabase, context.userId);
     const { data: cats } = await context.supabase.from("categories").select("id,name");
+    const { data: allTools } = await context.supabase.from("tools").select("id, name, slug, website_url");
     const results: Array<{ name: string; url: string; status: "imported" | "duplicate" | "error"; message?: string; slug?: string; toolId?: string }> = [];
+
+    // Local mutable copy of tools for in-session duplicate checks
+    const localTools = allTools ? [...allTools] : [];
 
     for (const item of data.items) {
       try {
         const meta = await fetchSiteMetadata(item.website_url);
+        const host = new URL(meta.url).hostname.replace(/^www\./, "").toLowerCase();
         const slug = slugify(item.name);
-        const { data: existing } = await context.supabase
-          .from("tools")
-          .select("id,slug")
-          .or(`slug.eq.${slug},website_url.eq.${meta.url}`)
-          .maybeSingle();
+        const normalizedInputName = item.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        const existing = localTools.find((t: any) => {
+          let tHost = "";
+          try {
+            tHost = new URL(t.website_url).hostname.replace(/^www\./, "").toLowerCase();
+          } catch {
+            tHost = t.website_url.toLowerCase();
+          }
+          const tSlug = t.slug;
+          const normalizedTName = t.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+          if (normalizedTName === normalizedInputName) return true;
+          if (tSlug === slug) return true;
+          if (tHost === host) return true;
+          if (normalizedInputName.length > 3 && normalizedTName.length > 3 &&
+              (normalizedInputName.includes(normalizedTName) || normalizedTName.includes(normalizedInputName))) {
+            return true;
+          }
+          return false;
+        });
+
         if (existing) {
           results.push({ name: item.name, url: item.website_url, status: "duplicate", message: "Already exists", slug: existing.slug });
           continue;
@@ -253,6 +275,13 @@ export const bulkImport = createServerFn({ method: "POST" })
           .select("id,slug")
           .single();
         if (error) throw error;
+
+        localTools.push({
+          id: inserted.id,
+          name: item.name,
+          slug: inserted.slug,
+          website_url: meta.url
+        });
 
         if (enriched.tags?.length) {
           await context.supabase.from("tool_tags").insert(
