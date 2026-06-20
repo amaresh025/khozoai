@@ -2,7 +2,7 @@ import pg from 'pg';
 import fs from 'fs';
 
 // Connection details derived from .env
-const connectionString = "postgresql://postgres.lrkfksnlldcymtkziuqp:Khozoai7525@@aws-0-us-east-1.pooler.supabase.com:6543/postgres";
+const connectionString = "postgresql://postgres:Khozoai7525@@db.lrkfksnlldcymtkziuqp.supabase.co:5432/postgres";
 
 async function main() {
   const client = new pg.Client({ connectionString });

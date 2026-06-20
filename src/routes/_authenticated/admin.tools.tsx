@@ -94,8 +94,15 @@ function AdminToolsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {t.logo_url && <img src={t.logo_url} alt="" className="h-6 w-6 rounded border border-border" onError={(e) => (e.currentTarget.style.display = "none")} />}
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{t.name}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-medium">{t.name}</span>
+                          {t.needs_review && (
+                            <span className="rounded bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 shrink-0">
+                              Needs Review
+                            </span>
+                          )}
+                        </div>
                         <div className="truncate text-xs text-muted-foreground">{t.category?.name ?? "—"}</div>
                       </div>
                     </div>

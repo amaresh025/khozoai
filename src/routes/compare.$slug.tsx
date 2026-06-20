@@ -28,8 +28,8 @@ function prettify(s: string) {
 function CompareDetail() {
   const { slug } = Route.useParams();
   const [aSlug, bSlug] = slug.split("-vs-");
-  const a = useQuery({ queryKey: ["tool", aSlug], queryFn: async () => (await Q.toolBySlug(aSlug)).data });
-  const b = useQuery({ queryKey: ["tool", bSlug], queryFn: async () => (await Q.toolBySlug(bSlug)).data });
+  const a = useQuery({ queryKey: ["tool", aSlug], queryFn: async () => (await Q.toolBySlug(aSlug)).data as Tool | null });
+  const b = useQuery({ queryKey: ["tool", bSlug], queryFn: async () => (await Q.toolBySlug(bSlug)).data as Tool | null });
 
   useEffect(() => {
     if (a.data?.id && b.data?.id) {
@@ -47,6 +47,44 @@ function CompareDetail() {
     queryKey: ["tool", bSlug, "features"],
     queryFn: async () => (await Q.toolFeatures(b.data!.id)).data ?? [],
   });
+
+  const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await Q.categories()).data ?? [] });
+
+  const getSecondaryCategoryNames = (secIds: string[] | null) => {
+    if (!secIds || !secIds.length || !cats.data) return "—";
+    const names = secIds
+      .map((id) => cats.data.find((c) => c.id === id)?.name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : "—";
+  };
+
+  const renderCapability = (val: any) => {
+    if (typeof val === "boolean") {
+      return val ? (
+        <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+          <Check className="h-4 w-4 shrink-0" /> Yes
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 text-destructive font-semibold">
+          <X className="h-4 w-4 shrink-0" /> No
+        </span>
+      );
+    }
+    if (typeof val === "string") {
+      const colorClass =
+        val === "Excellent"
+          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+          : val === "Good"
+          ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20"
+          : "bg-muted text-muted-foreground border border-border";
+      return (
+        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${colorClass}`}>
+          {val}
+        </span>
+      );
+    }
+    return "—";
+  };
 
   if (a.isLoading || b.isLoading) return <div className="mx-auto max-w-5xl px-4 py-20">Loading…</div>;
   if (!a.data || !b.data) return (
@@ -90,9 +128,69 @@ function CompareDetail() {
                 b={<p className="text-muted-foreground leading-relaxed text-sm">{b.data.short_description}</p>}
               />
               <Row
-                label="Category"
+                label="Key Summary"
+                a={<p className="text-muted-foreground leading-relaxed text-sm">{a.data.key_summary || "—"}</p>}
+                b={<p className="text-muted-foreground leading-relaxed text-sm">{b.data.key_summary || "—"}</p>}
+              />
+              <Row
+                label="Primary Category"
                 a={a.data.category?.name ?? "—"}
                 b={b.data.category?.name ?? "—"}
+              />
+              <Row
+                label="Secondary Categories"
+                a={getSecondaryCategoryNames(a.data.secondary_categories)}
+                b={getSecondaryCategoryNames(b.data.secondary_categories)}
+              />
+              <Row
+                label="Target Use Cases"
+                a={
+                  <div className="flex flex-wrap gap-1">
+                    {a.data.use_cases && a.data.use_cases.length > 0
+                      ? a.data.use_cases.map((uc) => (
+                          <span key={uc} className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium">
+                            {uc}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+                b={
+                  <div className="flex flex-wrap gap-1">
+                    {b.data.use_cases && b.data.use_cases.length > 0
+                      ? b.data.use_cases.map((uc) => (
+                          <span key={uc} className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium">
+                            {uc}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+              />
+              <Row
+                label="Integrations / Platforms"
+                a={
+                  <div className="flex flex-wrap gap-1">
+                    {a.data.platforms && a.data.platforms.length > 0
+                      ? a.data.platforms.map((p) => (
+                          <span key={p} className="rounded border border-border bg-surface px-2 py-0.5 text-xs">
+                            {p}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+                b={
+                  <div className="flex flex-wrap gap-1">
+                    {b.data.platforms && b.data.platforms.length > 0
+                      ? b.data.platforms.map((p) => (
+                          <span key={p} className="rounded border border-border bg-surface px-2 py-0.5 text-xs">
+                            {p}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
               />
               <Row
                 label="Pricing"
@@ -118,6 +216,54 @@ function CompareDetail() {
                 a={getPricingAvailability(a.data.pricing)}
                 b={getPricingAvailability(b.data.pricing)}
               />
+
+              {/* Capability Metrics */}
+              <Row
+                label="Coding Quality"
+                a={renderCapability(a.data.compare_data?.coding_quality)}
+                b={renderCapability(b.data.compare_data?.coding_quality)}
+              />
+              <Row
+                label="Writing Quality"
+                a={renderCapability(a.data.compare_data?.writing_quality)}
+                b={renderCapability(b.data.compare_data?.writing_quality)}
+              />
+              <Row
+                label="Research Capability"
+                a={renderCapability(a.data.compare_data?.research)}
+                b={renderCapability(b.data.compare_data?.research)}
+              />
+              <Row
+                label="Image Generation"
+                a={renderCapability(a.data.compare_data?.image_generation)}
+                b={renderCapability(b.data.compare_data?.image_generation)}
+              />
+              <Row
+                label="Video Generation"
+                a={renderCapability(a.data.compare_data?.video_generation)}
+                b={renderCapability(b.data.compare_data?.video_generation)}
+              />
+              <Row
+                label="Voice Features"
+                a={renderCapability(a.data.compare_data?.voice)}
+                b={renderCapability(b.data.compare_data?.voice)}
+              />
+              <Row
+                label="Web Search"
+                a={renderCapability(a.data.compare_data?.web_search)}
+                b={renderCapability(b.data.compare_data?.web_search)}
+              />
+              <Row
+                label="File Uploads"
+                a={renderCapability(a.data.compare_data?.file_upload)}
+                b={renderCapability(b.data.compare_data?.file_upload)}
+              />
+              <Row
+                label="Developer API"
+                a={renderCapability(a.data.compare_data?.api)}
+                b={renderCapability(b.data.compare_data?.api)}
+              />
+
               <Row
                 label="Key features"
                 a={
@@ -255,9 +401,17 @@ function Card({ tool }: { tool: Tool }) {
             {tool.name}
             {tool.verified && <BadgeCheck className="h-4 w-4 text-primary" />}
           </h2>
-          <div className="mt-1 flex items-center gap-1 text-sm">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            {Number(tool.rating).toFixed(1)} <span className="text-muted-foreground">({tool.review_count})</span>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {tool.pricing && (
+              <span className="capitalize inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                {tool.pricing}
+              </span>
+            )}
+            {tool.category && (
+              <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                {tool.category.name}
+              </span>
+            )}
           </div>
         </div>
       </div>

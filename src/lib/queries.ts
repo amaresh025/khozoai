@@ -27,6 +27,11 @@ export type Tool = {
   published_at: string | null;
   created_at: string;
   category?: Category | null;
+  key_summary: string | null;
+  secondary_categories: string[] | null;
+  use_cases: string[] | null;
+  compare_data: Record<string, any> | null;
+  needs_review: boolean;
 };
 
 export type Category = {

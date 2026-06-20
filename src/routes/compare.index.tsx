@@ -200,9 +200,10 @@ function ToolPicker({
                   {t.category?.name ?? "—"}
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                {Number(t.rating).toFixed(1)}
+              <div className="flex shrink-0 items-center">
+                <span className="capitalize text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                  {t.pricing}
+                </span>
               </div>
             </button>
           ))}

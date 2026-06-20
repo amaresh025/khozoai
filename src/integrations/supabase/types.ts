@@ -556,6 +556,11 @@ export type Database = {
           verified: boolean
           views: number
           website_url: string
+          key_summary: string | null
+          secondary_categories: string[] | null
+          use_cases: string[] | null
+          compare_data: Json | null
+          needs_review: boolean
         }
         Insert: {
           affiliate_url?: string | null
@@ -586,6 +591,11 @@ export type Database = {
           verified?: boolean
           views?: number
           website_url: string
+          key_summary?: string | null
+          secondary_categories?: string[] | null
+          use_cases?: string[] | null
+          compare_data?: Json | null
+          needs_review?: boolean
         }
         Update: {
           affiliate_url?: string | null
@@ -616,6 +626,11 @@ export type Database = {
           verified?: boolean
           views?: number
           website_url?: string
+          key_summary?: string | null
+          secondary_categories?: string[] | null
+          use_cases?: string[] | null
+          compare_data?: Json | null
+          needs_review?: boolean
         }
         Relationships: [
           {

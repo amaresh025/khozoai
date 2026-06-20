@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Wrench, Folder, Inbox, MessageSquare, Eye, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { approveSubmission } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Admin Overview — AI Tools Hub" }] }),
@@ -12,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function AdminOverview() {
   const qc = useQueryClient();
+  const approveSub = useServerFn(approveSubmission);
   const stats = useQuery({
     queryKey: ["admin", "stats"],
     queryFn: async () => {
@@ -46,45 +49,14 @@ function AdminOverview() {
         if (error) throw error;
         return;
       }
-      // Approve = create a published tool row from the submission, then mark approved.
-      const { data: sub, error: subErr } = await supabase
-        .from("submissions").select("*").eq("id", vars.id).maybeSingle();
-      if (subErr) throw subErr;
-      if (!sub) throw new Error("Submission not found");
-
-      const base = (sub.name || "tool").toLowerCase().trim()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 70) || "tool";
-      let slug = base;
-      for (let i = 2; i < 50; i++) {
-        const { data: hit } = await supabase.from("tools").select("id").eq("slug", slug).maybeSingle();
-        if (!hit) break;
-        slug = `${base}-${i}`;
-      }
-      const notes = sub.notes ?? "";
-      const logo = notes.match(/logo:\s*(\S+)/i)?.[1];
-      const cover = notes.match(/cover:\s*(\S+)/i)?.[1];
-
-      const { error: insErr } = await supabase.from("tools").insert({
-        name: sub.name,
-        slug,
-        short_description: sub.short_description || `${sub.name} — AI tool`,
-        website_url: sub.website_url,
-        logo_url: logo && logo !== "n/a" ? logo : null,
-        cover_url: cover && cover !== "n/a" ? cover : null,
-        pricing: (sub.pricing ?? "freemium") as never,
-        category_id: sub.category_id,
-        status: "approved" as never,
-        published_at: new Date().toISOString(),
-        submitted_by: sub.submitter_id,
-      } as never);
-      if (insErr) throw insErr;
-
-      const { error: updErr } = await supabase.from("submissions").update({ status: "approved" }).eq("id", vars.id);
-      if (updErr) throw updErr;
+      return approveSub({ data: { submissionId: vars.id } });
     },
-    onSuccess: () => {
-      toast.success("Updated");
+    onSuccess: (res) => {
+      if (res && res.needsReview) {
+        toast.warning("Approved but AI enrichment failed. Marked as 'Needs Review'.");
+      } else {
+        toast.success("Approved and enriched successfully!");
+      }
       qc.invalidateQueries({ queryKey: ["admin"] });
       qc.invalidateQueries({ queryKey: ["tools"] });
       qc.invalidateQueries({ queryKey: ["categories"] });

@@ -23,6 +23,24 @@ function slugify(s: string) {
     .slice(0, 80);
 }
 
+function cleanHtmlToText(html: string): string {
+  if (!html) return "";
+  let clean = html
+    .replace(/<head[\s\S]*?<\/head>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, "");
+  clean = clean.replace(/<[^>]+>/g, " ");
+  clean = clean
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+  return clean.replace(/\s+/g, " ").trim().slice(0, 10000);
+}
+
 function pickMeta(html: string, names: string[]) {
   for (const name of names) {
     const re = new RegExp(
@@ -62,6 +80,7 @@ async function fetchSiteMetadata(url: string) {
       reachable: false,
       error: e?.message ?? "fetch failed",
       title: null, description: null, ogImage: null, favicon: null,
+      bodyText: "",
     };
   }
   const title =
@@ -78,6 +97,8 @@ async function fetchSiteMetadata(url: string) {
     return `${parsed.origin}/favicon.ico`;
   })();
 
+  const bodyText = cleanHtmlToText(html);
+
   return {
     url: parsed.toString(),
     hostname: parsed.hostname,
@@ -86,6 +107,7 @@ async function fetchSiteMetadata(url: string) {
     description: description?.slice(0, 500) ?? null,
     ogImage,
     favicon,
+    bodyText,
   };
 }
 
@@ -94,39 +116,83 @@ async function enrichWithAI(input: {
   url: string;
   rawTitle: string | null;
   rawDescription: string | null;
+  bodyText?: string | null;
   categories: { id: string; name: string }[];
 }) {
   const key = process.env.LOVABLE_API_KEY;
-  if (!key) {
-    return {
-      short_description: input.rawDescription?.slice(0, 160) ?? `${input.name} — AI tool`,
-      full_description: input.rawDescription ?? "",
-      seo_description: input.rawDescription?.slice(0, 160) ?? "",
-      category_id: null as string | null,
-      tags: [] as string[],
-      pricing: "freemium" as const,
-    };
-  }
+  
+  const fallback = {
+    short_description: input.rawDescription?.slice(0, 120) ?? `${input.name} — AI tool`,
+    full_description: input.rawDescription ? `${input.rawDescription}\n\nExplore more details on their official site.` : "",
+    key_summary: "Enrichment failed or skipped. Review official site for details.",
+    category_id: null as string | null,
+    secondary_categories: [] as string[],
+    tags: [] as string[],
+    pricing: "freemium" as const,
+    pricing_details: null as string | null,
+    features: ["AI Capabilities"] as string[],
+    pros: ["Available on Web"] as string[],
+    cons: ["Check site for limitations"] as string[],
+    platforms: [] as string[],
+    use_cases: [] as string[],
+    compare_data: {
+      coding_quality: "Basic",
+      writing_quality: "Basic",
+      research: "Basic",
+      image_generation: false,
+      video_generation: false,
+      voice: false,
+      web_search: false,
+      file_upload: false,
+      api: false
+    }
+  };
+
+  if (!key) return fallback;
 
   const categoryList = input.categories.map((c) => `- ${c.id} :: ${c.name}`).join("\n");
-  const prompt = `You are an editor for an AI tools directory. Given a tool, return JSON with concise marketing copy.
+  const prompt = `You are an editor for a professional AI tools directory.
+Given the tool details below, analyze the text and generate a rich, accurate profile in JSON format.
 
 Tool name: ${input.name}
 Website: ${input.url}
-Raw page title: ${input.rawTitle ?? ""}
-Raw meta description: ${input.rawDescription ?? ""}
+Page title: ${input.rawTitle ?? ""}
+Meta description: ${input.rawDescription ?? ""}
+Landing page content:
+${input.bodyText ?? ""}
 
-Available categories (pick the single best id, or null if none fit):
+Available categories (pick the primary category ID, and secondary category IDs):
 ${categoryList}
 
-Return strict JSON with this shape:
+Available integrations (choose from: "API Available", "Browser Extension", "Mobile App", "Desktop App", "Team Collaboration")
+Available use cases (choose from: "Research", "Coding", "Content Writing", "SEO", "Marketing", "Automation", "Learning", "Design")
+
+Return strict JSON matching this exact structure:
 {
-  "short_description": "one sentence, 100-160 chars, no marketing fluff",
-  "full_description": "2-3 short paragraphs explaining what it does and who it's for, 400-800 chars",
-  "seo_description": "SEO meta description 140-160 chars",
-  "category_id": "uuid or null",
-  "tags": ["3-6 lowercase single or two-word tags"],
-  "pricing": "free | freemium | paid | subscription | contact"
+  "short_description": "one sentence summary, max 120 chars, no fluff",
+  "full_description": "3-5 paragraphs detail description explaining capabilities and core audience, 600-1500 chars",
+  "key_summary": "a short 2-3 sentence overview or bullet points highlighting core value",
+  "category_id": "the best primary category ID from the list, or null",
+  "secondary_categories": ["array of category IDs from the list that also fit the tool, or empty array"],
+  "tags": ["3-6 lowercase tags. Avoid generic tags like 'ai' or 'tool'"],
+  "pricing": "free | freemium | paid | subscription | contact",
+  "pricing_details": "short summary of pricing models/tiers found, or null",
+  "features": ["4-6 structured key features of the tool, each 2-6 words max. e.g. 'Code Completion', 'Voice Mode'"],
+  "pros": ["3-5 strengths / advantages of the tool"],
+  "cons": ["2-4 limitations / weak areas / missing features"],
+  "platforms": ["array of integrations/platforms the tool supports (from the Integrations list above)"],
+  "use_cases": ["array of best use cases from the Use Cases list above"],
+  "compare_data": {
+    "coding_quality": "Excellent | Good | Basic",
+    "writing_quality": "Excellent | Good | Basic",
+    "research": "Excellent | Good | Basic",
+    "image_generation": true,
+    "video_generation": true,
+    "voice": true,
+    "web_search": true,
+    "file_upload": true,
+    "api": true
+  }
 }`;
 
   try {
@@ -150,24 +216,36 @@ Return strict JSON with this shape:
     const json = await r.json();
     const text = json.choices?.[0]?.message?.content ?? "{}";
     const parsed = JSON.parse(text);
+
     return {
       short_description: String(parsed.short_description ?? "").slice(0, 200),
-      full_description: String(parsed.full_description ?? "").slice(0, 2000),
-      seo_description: String(parsed.seo_description ?? "").slice(0, 200),
+      full_description: String(parsed.full_description ?? "").slice(0, 3000),
+      key_summary: String(parsed.key_summary ?? "").slice(0, 1000),
       category_id: typeof parsed.category_id === "string" && parsed.category_id.length === 36 ? parsed.category_id : null,
+      secondary_categories: Array.isArray(parsed.secondary_categories) ? parsed.secondary_categories.filter((x: any) => typeof x === "string" && x.length === 36) : [],
       tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 8).map((t: any) => String(t).toLowerCase().slice(0, 32)) : [],
       pricing: ["free", "freemium", "paid", "subscription", "contact"].includes(parsed.pricing) ? parsed.pricing : "freemium",
+      pricing_details: parsed.pricing_details ? String(parsed.pricing_details).slice(0, 500) : null,
+      features: Array.isArray(parsed.features) ? parsed.features.map((f: any) => String(f).slice(0, 100)) : [],
+      pros: Array.isArray(parsed.pros) ? parsed.pros.map((p: any) => String(p).slice(0, 200)) : [],
+      cons: Array.isArray(parsed.cons) ? parsed.cons.map((c: any) => String(c).slice(0, 200)) : [],
+      platforms: Array.isArray(parsed.platforms) ? parsed.platforms.map((pl: any) => String(pl).slice(0, 100)) : [],
+      use_cases: Array.isArray(parsed.use_cases) ? parsed.use_cases.map((uc: any) => String(uc).slice(0, 100)) : [],
+      compare_data: parsed.compare_data && typeof parsed.compare_data === "object" ? {
+        coding_quality: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.coding_quality) ? parsed.compare_data.coding_quality : "Basic",
+        writing_quality: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.writing_quality) ? parsed.compare_data.writing_quality : "Basic",
+        research: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.research) ? parsed.compare_data.research : "Basic",
+        image_generation: !!parsed.compare_data.image_generation,
+        video_generation: !!parsed.compare_data.video_generation,
+        voice: !!parsed.compare_data.voice,
+        web_search: !!parsed.compare_data.web_search,
+        file_upload: !!parsed.compare_data.file_upload,
+        api: !!parsed.compare_data.api
+      } : fallback.compare_data
     };
   } catch (e) {
     console.error("AI enrichment failed", e);
-    return {
-      short_description: input.rawDescription?.slice(0, 160) ?? `${input.name} — AI tool`,
-      full_description: input.rawDescription ?? "",
-      seo_description: input.rawDescription?.slice(0, 160) ?? "",
-      category_id: null as string | null,
-      tags: [] as string[],
-      pricing: "freemium" as const,
-    };
+    return fallback;
   }
 }
 
@@ -188,9 +266,146 @@ export const enrichUrl = createServerFn({ method: "POST" })
       url: meta.url,
       rawTitle: meta.title,
       rawDescription: meta.description,
+      bodyText: meta.bodyText,
       categories: cats ?? [],
     });
     return { meta, name, enriched };
+  });
+
+export const approveSubmission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ submissionId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertEditor(context.supabase, context.userId);
+    
+    // 1. Fetch submission details
+    const { data: sub, error: subErr } = await context.supabase
+      .from("submissions")
+      .select("*")
+      .eq("id", data.submissionId)
+      .maybeSingle();
+    if (subErr) throw subErr;
+    if (!sub) throw new Error("Submission not found");
+    if (sub.status !== "pending") throw new Error("Submission is already processed");
+
+    // 2. Fetch categories for AI selection
+    const { data: cats } = await context.supabase.from("categories").select("id,name");
+
+    // 3. Fetch site metadata
+    const meta = await fetchSiteMetadata(sub.website_url);
+
+    // 4. Generate unique slug
+    const base = (sub.name || "tool").toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 70) || "tool";
+    let slug = base;
+    for (let i = 2; i < 50; i++) {
+      const { data: hit } = await context.supabase.from("tools").select("id").eq("slug", slug).maybeSingle();
+      if (!hit) break;
+      slug = `${base}-${i}`;
+    }
+
+    // 5. Run AI enrichment
+    let enriched;
+    let needsReview = false;
+    try {
+      enriched = await enrichWithAI({
+        name: sub.name,
+        url: meta.url,
+        rawTitle: meta.title,
+        rawDescription: meta.description,
+        bodyText: meta.bodyText,
+        categories: cats ?? [],
+      });
+    } catch (enrichErr) {
+      needsReview = true;
+      enriched = {
+        short_description: sub.short_description || meta.description?.slice(0, 120) || `${sub.name} — AI tool`,
+        full_description: meta.description || sub.short_description || "",
+        key_summary: "Enrichment failed. Needs manual review.",
+        category_id: sub.category_id || null,
+        secondary_categories: [] as string[],
+        tags: [] as string[],
+        pricing: (sub.pricing || "freemium") as any,
+        pricing_details: null,
+        features: ["AI Capabilities"],
+        pros: ["Available on Web"],
+        cons: ["Check site for limitations"],
+        platforms: [] as string[],
+        use_cases: [] as string[],
+        compare_data: {
+          coding_quality: "Basic",
+          writing_quality: "Basic",
+          research: "Basic",
+          image_generation: false,
+          video_generation: false,
+          voice: false,
+          web_search: false,
+          file_upload: false,
+          api: false
+        }
+      };
+    }
+
+    // 6. Insert into tools table
+    const { data: inserted, error: insErr } = await context.supabase
+      .from("tools")
+      .insert({
+        name: sub.name,
+        slug,
+        short_description: enriched.short_description || sub.short_description || `${sub.name} — AI tool`,
+        full_description: enriched.full_description || null,
+        key_summary: enriched.key_summary || null,
+        website_url: meta.url,
+        logo_url: meta.favicon || null,
+        cover_url: (meta as any).ogImage || null,
+        pricing: enriched.pricing,
+        pricing_details: enriched.pricing_details || null,
+        category_id: enriched.category_id || sub.category_id || null,
+        secondary_categories: enriched.secondary_categories,
+        use_cases: enriched.use_cases,
+        compare_data: enriched.compare_data,
+        needs_review: needsReview,
+        pros: enriched.pros,
+        cons: enriched.cons,
+        platforms: enriched.platforms,
+        status: "approved",
+        published_at: new Date().toISOString(),
+        submitted_by: sub.submitter_id,
+      })
+      .select("id")
+      .single();
+    
+    if (insErr) throw insErr;
+
+    // 7. Insert features
+    if (enriched.features?.length) {
+      await context.supabase.from("tool_features").insert(
+        enriched.features.map((feature: string, idx: number) => ({
+          tool_id: inserted.id,
+          feature,
+          sort_order: idx + 1
+        }))
+      );
+    }
+
+    // 8. Insert tags
+    if (enriched.tags?.length) {
+      await context.supabase.from("tool_tags").insert(
+        enriched.tags.map((tag: string) => ({ tool_id: inserted.id, tag })),
+      );
+    }
+
+    // 9. Update submission status to approved
+    const { error: updErr } = await context.supabase
+      .from("submissions")
+      .update({ status: "approved" })
+      .eq("id", data.submissionId);
+    if (updErr) throw updErr;
+
+    return { success: true, toolId: inserted.id, slug, needsReview };
   });
 
 const importItemSchema = z.object({
@@ -247,15 +462,50 @@ export const bulkImport = createServerFn({ method: "POST" })
           continue;
         }
 
-        const enriched = data.enrich
-          ? await enrichWithAI({ name: item.name, url: meta.url, rawTitle: meta.title, rawDescription: meta.description, categories: cats ?? [] })
-          : {
-              short_description: meta.description?.slice(0, 160) ?? `${item.name} — AI tool`,
-              full_description: meta.description ?? "",
-              category_id: null as string | null,
-              tags: [] as string[],
-              pricing: "freemium" as const,
-            };
+        let enriched;
+        let needsReview = false;
+        try {
+          if (data.enrich) {
+            enriched = await enrichWithAI({
+              name: item.name,
+              url: meta.url,
+              rawTitle: meta.title,
+              rawDescription: meta.description,
+              bodyText: meta.bodyText,
+              categories: cats ?? [],
+            });
+          } else {
+            throw new Error("Enrichment skipped");
+          }
+        } catch (enrichErr) {
+          needsReview = true;
+          enriched = {
+            short_description: meta.description?.slice(0, 120) ?? `${item.name} — AI tool`,
+            full_description: meta.description ?? "",
+            key_summary: "Enrichment failed. Needs manual review.",
+            category_id: null,
+            secondary_categories: [],
+            tags: [],
+            pricing: "freemium" as const,
+            pricing_details: null,
+            features: ["AI Capabilities"],
+            pros: ["Available on Web"],
+            cons: ["Check site for limitations"],
+            platforms: [],
+            use_cases: [],
+            compare_data: {
+              coding_quality: "Basic",
+              writing_quality: "Basic",
+              research: "Basic",
+              image_generation: false,
+              video_generation: false,
+              voice: false,
+              web_search: false,
+              file_upload: false,
+              api: false
+            }
+          };
+        }
 
         const { data: inserted, error } = await context.supabase
           .from("tools")
@@ -264,11 +514,20 @@ export const bulkImport = createServerFn({ method: "POST" })
             slug,
             short_description: enriched.short_description || `${item.name} — AI tool`,
             full_description: enriched.full_description || null,
+            key_summary: enriched.key_summary || null,
             website_url: meta.url,
             logo_url: meta.favicon ?? null,
             cover_url: (meta as any).ogImage ?? null,
             pricing: enriched.pricing,
+            pricing_details: enriched.pricing_details || null,
             category_id: enriched.category_id,
+            secondary_categories: enriched.secondary_categories,
+            use_cases: enriched.use_cases,
+            compare_data: enriched.compare_data,
+            needs_review: needsReview,
+            pros: enriched.pros,
+            cons: enriched.cons,
+            platforms: enriched.platforms,
             status: "pending",
             submitted_by: context.userId,
           })
@@ -283,14 +542,30 @@ export const bulkImport = createServerFn({ method: "POST" })
           website_url: meta.url
         });
 
+        if (enriched.features?.length) {
+          await context.supabase.from("tool_features").insert(
+            enriched.features.map((feature: string, idx: number) => ({
+              tool_id: inserted.id,
+              feature,
+              sort_order: idx + 1
+            }))
+          );
+        }
+
         if (enriched.tags?.length) {
           await context.supabase.from("tool_tags").insert(
             enriched.tags.map((tag: string) => ({ tool_id: inserted.id, tag })),
           );
-
         }
 
-        results.push({ name: item.name, url: item.website_url, status: "imported", slug: inserted.slug, toolId: inserted.id });
+        results.push({
+          name: item.name,
+          url: item.website_url,
+          status: "imported",
+          message: needsReview ? "Needs Review" : undefined,
+          slug: inserted.slug,
+          toolId: inserted.id
+        });
       } catch (e: any) {
         results.push({ name: item.name, url: item.website_url, status: "error", message: e?.message ?? "import failed" });
       }
