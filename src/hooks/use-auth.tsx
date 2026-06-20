@@ -23,9 +23,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("[Auth] Initializing auth state listener (onAuthStateChange)");
     // onAuthStateChange fires INITIAL_SESSION immediately, so a separate
     // getSession() call would cause a redundant state update (visible refresh).
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      console.log("[Auth] onAuthStateChange event:", event, {
+        hasSession: !!s,
+        hasUser: !!s?.user,
+        userId: s?.user?.id,
+      });
       setSession(s);
       setLoading(false);
     });
