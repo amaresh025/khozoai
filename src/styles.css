@@ -1,0 +1,163 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   AI Tools Hub — Premium Directory Design System
+   Light by default. Clean, trustworthy, Stripe/Futurepedia-grade.
+   ============================================================ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-surface: var(--surface);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Light theme (default) */
+  --background: oklch(1 0 0);                 /* #FFFFFF */
+  --foreground: oklch(0.21 0.03 264);         /* #111827 */
+  --surface: oklch(0.985 0.005 248);          /* #F8FAFC */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.03 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.03 264);
+
+  --primary: oklch(0.55 0.22 264);            /* #2563EB */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0.01 256);          /* slate-100 */
+  --secondary-foreground: oklch(0.21 0.03 264);
+
+  --muted: oklch(0.97 0.01 256);
+  --muted-foreground: oklch(0.50 0.03 256);   /* slate-500/600 */
+  --accent: oklch(0.96 0.02 264);
+  --accent-foreground: oklch(0.21 0.03 264);
+
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.62 0.16 152);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.78 0.16 75);
+  --warning-foreground: oklch(0.22 0.05 60);
+
+  --border: oklch(0.93 0.013 256);            /* slate-200 */
+  --input: oklch(0.93 0.013 256);
+  --ring: oklch(0.55 0.22 264);
+
+  --brand: oklch(0.55 0.22 264);              /* blue */
+  --brand-2: oklch(0.55 0.26 295);            /* violet #7C3AED */
+
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --gradient-brand: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  --shadow-xs: 0 1px 2px 0 oklch(0.21 0.03 264 / 0.05);
+  --shadow-sm: 0 1px 3px 0 oklch(0.21 0.03 264 / 0.08), 0 1px 2px -1px oklch(0.21 0.03 264 / 0.06);
+  --shadow-md: 0 4px 8px -2px oklch(0.21 0.03 264 / 0.08), 0 2px 4px -2px oklch(0.21 0.03 264 / 0.05);
+  --shadow-lg: 0 12px 24px -6px oklch(0.21 0.03 264 / 0.10), 0 4px 8px -4px oklch(0.21 0.03 264 / 0.06);
+  --shadow-brand: 0 8px 24px -8px oklch(0.55 0.22 264 / 0.35);
+}
+
+.dark {
+  --background: oklch(0.16 0.02 264);
+  --foreground: oklch(0.97 0.005 256);
+  --surface: oklch(0.20 0.02 264);
+  --card: oklch(0.20 0.02 264);
+  --card-foreground: oklch(0.97 0.005 256);
+  --popover: oklch(0.18 0.02 264);
+  --popover-foreground: oklch(0.97 0.005 256);
+
+  --primary: oklch(0.68 0.18 264);
+  --primary-foreground: oklch(0.14 0.02 264);
+  --secondary: oklch(0.24 0.02 264);
+  --secondary-foreground: oklch(0.97 0.005 256);
+
+  --muted: oklch(0.24 0.02 264);
+  --muted-foreground: oklch(0.68 0.02 256);
+  --accent: oklch(0.28 0.04 264);
+  --accent-foreground: oklch(0.97 0.005 256);
+
+  --border: oklch(1 0 0 / 0.10);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.68 0.18 264);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; font-weight: 700; }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-gradient-brand { background: var(--gradient-brand); }
+  .bg-surface { background-color: var(--color-surface); }
+  .shadow-brand { box-shadow: var(--shadow-brand); }
+  .shadow-card { box-shadow: var(--shadow-sm); }
+  .shadow-card-lg { box-shadow: var(--shadow-lg); }
+  .glass {
+    background: color-mix(in oklab, var(--background) 80%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .card-hover {
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card-hover:hover {
+    border-color: color-mix(in oklab, var(--brand) 50%, var(--border));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .ring-brand { box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand) 18%, transparent); }
+}
