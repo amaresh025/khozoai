@@ -4,6 +4,7 @@ import { Copy } from "lucide-react";
 import { Q } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const Route = createFileRoute("/prompts/$slug")({
   head: ({ params }) => ({
@@ -11,9 +12,9 @@ export const Route = createFileRoute("/prompts/$slug")({
       { title: `${prettify(params.slug)} Prompt — AI Tools Hub` },
       { name: "description", content: `Use this ready-to-go ${prettify(params.slug)} prompt with your favorite AI model.` },
       { property: "og:title", content: `${prettify(params.slug)} Prompt — AI Tools Hub` },
-      { property: "og:url", content: `/prompts/${params.slug}` },
+      { property: "og:url", content: `https://khozoai.com/prompts/${params.slug}` },
     ],
-    links: [{ rel: "canonical", href: `/prompts/${params.slug}` }],
+    links: [{ rel: "canonical", href: `https://khozoai.com/prompts/${params.slug}` }],
   }),
   component: PromptDetail,
 });
@@ -36,7 +37,12 @@ function PromptDetail() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <Link to="/prompts" className="text-sm text-muted-foreground">← Prompt library</Link>
+      <Breadcrumbs
+        items={[
+          { label: "Prompts", href: "/prompts" },
+          { label: p.data.title },
+        ]}
+      />
       <div className="text-xs uppercase tracking-wider text-muted-foreground mt-2">{p.data.category} · {p.data.model}</div>
       <h1 className="font-display text-3xl sm:text-4xl font-bold mt-1">{p.data.title}</h1>
       {p.data.description && <p className="mt-2 text-muted-foreground">{p.data.description}</p>}

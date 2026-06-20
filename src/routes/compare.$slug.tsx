@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Star, ExternalLink, Check, X, BadgeCheck } from "lucide-react";
-import { Q } from "@/lib/queries";
+import { useEffect } from "react";
+import { Q, logEvent } from "@/lib/queries";
 import type { Tool } from "@/lib/queries";
 
 export const Route = createFileRoute("/compare/$slug")({
@@ -12,9 +13,9 @@ export const Route = createFileRoute("/compare/$slug")({
         { title: `${title} — Detailed Comparison | AI Tools Hub` },
         { name: "description", content: `${title}: features, pricing, ratings, pros and cons. See which one is right for you.` },
         { property: "og:title", content: `${title} — AI Tools Hub` },
-        { property: "og:url", content: `/compare/${params.slug}` },
+        { property: "og:url", content: `https://khozoai.com/compare/${params.slug}` },
       ],
-      links: [{ rel: "canonical", href: `/compare/${params.slug}` }],
+      links: [{ rel: "canonical", href: `https://khozoai.com/compare/${params.slug}` }],
     };
   },
   component: CompareDetail,
@@ -29,6 +30,12 @@ function CompareDetail() {
   const [aSlug, bSlug] = slug.split("-vs-");
   const a = useQuery({ queryKey: ["tool", aSlug], queryFn: async () => (await Q.toolBySlug(aSlug)).data });
   const b = useQuery({ queryKey: ["tool", bSlug], queryFn: async () => (await Q.toolBySlug(bSlug)).data });
+
+  useEffect(() => {
+    if (a.data?.id && b.data?.id) {
+      logEvent("tool_compare", { aSlug, bSlug, aId: a.data.id, bId: b.data.id });
+    }
+  }, [a.data?.id, b.data?.id, aSlug, bSlug]);
 
   const featuresA = useQuery({
     enabled: !!a.data?.id,

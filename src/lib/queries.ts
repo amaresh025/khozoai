@@ -72,32 +72,132 @@ export const Q = {
     supabase.from("categories").select("*").order("sort_order"),
   categoryBySlug: (slug: string) =>
     supabase.from("categories").select("*").eq("slug", slug).maybeSingle(),
-  tools: (opts?: {
+  tools: async (opts?: {
     categoryId?: string;
+    categoryIds?: string[];
     featured?: boolean;
     sponsored?: boolean;
     sort?: "rating" | "views" | "newest";
     limit?: number;
     search?: string;
     pricing?: string;
-  }) => {
+  }): Promise<{ data: Tool[] | null; error: any }> => {
     let q = supabase
       .from("tools")
       .select(baseToolSelect)
       .eq("status", "approved");
-    if (opts?.categoryId) q = q.eq("category_id", opts.categoryId);
+
+    if (opts?.categoryIds && opts.categoryIds.length > 0) {
+      q = q.in("category_id", opts.categoryIds);
+    } else if (opts?.categoryId) {
+      q = q.eq("category_id", opts.categoryId);
+    }
+
     if (opts?.featured) q = q.eq("featured", true);
     if (opts?.sponsored) q = q.eq("sponsored", true);
-    if (opts?.pricing) q = q.eq("pricing", opts.pricing as never);
-    if (opts?.search)
-      q = q.or(
-        `name.ilike.%${opts.search}%,short_description.ilike.%${opts.search}%`,
-      );
-    if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
-    else if (opts?.sort === "views") q = q.order("views", { ascending: false });
-    else q = q.order("created_at", { ascending: false });
-    if (opts?.limit) q = q.limit(opts.limit);
-    return q;
+    if (opts?.pricing) q = q.eq("pricing", opts.pricing as any);
+
+    if (!opts?.search) {
+      if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
+      else if (opts?.sort === "views") q = q.order("views", { ascending: false });
+      else q = q.order("created_at", { ascending: false });
+      
+      if (opts?.limit) q = q.limit(opts.limit);
+
+      const res = await q;
+      return { data: res.data as Tool[] | null, error: res.error };
+    }
+
+    const res = await q;
+    if (res.error || !res.data) {
+      return { data: null, error: res.error };
+    }
+
+    const searchLower = opts.search.toLowerCase().trim();
+    const searchKeywords = searchLower.split(/\s+/).filter(Boolean);
+
+    if (searchKeywords.length === 0) {
+      let sorted = [...res.data] as Tool[];
+      if (opts?.sort === "rating") sorted.sort((a, b) => b.rating - a.rating);
+      else if (opts?.sort === "views") sorted.sort((a, b) => b.views - a.views);
+      else sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      if (opts?.limit) sorted = sorted.slice(0, opts.limit);
+      return { data: sorted, error: null };
+    }
+
+    const scoredTools = res.data.map((tool: any) => {
+      let score = 0;
+      const nameLower = (tool.name || "").toLowerCase();
+      const shortDescLower = (tool.short_description || "").toLowerCase();
+      const fullDescLower = (tool.full_description || "").toLowerCase();
+
+      if (nameLower === searchLower) {
+        score += 1000;
+      } else if (nameLower.startsWith(searchLower)) {
+        score += 500;
+      }
+      
+      const nameWords = nameLower.split(/\s+/).filter(Boolean);
+      const nameWordStarts = nameWords.some(w => w.startsWith(searchLower));
+      if (nameWordStarts) {
+        score += 300;
+      }
+      
+      if (nameLower.includes(searchLower)) {
+        score += 100;
+      }
+
+      let keywordNameMatches = 0;
+      searchKeywords.forEach(keyword => {
+        if (nameWords.includes(keyword)) {
+          keywordNameMatches += 1;
+        } else if (nameLower.includes(keyword)) {
+          keywordNameMatches += 0.5;
+        }
+      });
+      score += keywordNameMatches * 150;
+
+      if (shortDescLower.includes(searchLower) || fullDescLower.includes(searchLower)) {
+        score += 50;
+      }
+
+      let keywordDescMatches = 0;
+      searchKeywords.forEach(keyword => {
+        if (shortDescLower.includes(keyword) || fullDescLower.includes(keyword)) {
+          keywordDescMatches += 1;
+        }
+      });
+      score += keywordDescMatches * 20;
+
+      if (score > 0) {
+        score += (tool.rating || 0) * 5;
+        score += Math.min(tool.views || 0, 1000) * 0.1;
+      }
+
+      return { tool: tool as Tool, score };
+    });
+
+    let filteredScored = scoredTools.filter(item => item.score > 0);
+
+    filteredScored.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      if (opts?.sort === "rating") {
+        return b.tool.rating - a.tool.rating;
+      }
+      if (opts?.sort === "views") {
+        return b.tool.views - a.tool.views;
+      }
+      return new Date(b.tool.created_at).getTime() - new Date(a.tool.created_at).getTime();
+    });
+
+    let finalTools = filteredScored.map(item => item.tool);
+    if (opts?.limit) {
+      finalTools = finalTools.slice(0, opts.limit);
+    }
+
+    return { data: finalTools, error: null };
   },
   toolBySlug: (slug: string) =>
     supabase.from("tools").select(baseToolSelect).eq("slug", slug).maybeSingle(),

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Q } from "@/lib/queries";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const Route = createFileRoute("/blog/$slug")({
   head: ({ params }) => ({
@@ -9,9 +10,9 @@ export const Route = createFileRoute("/blog/$slug")({
       { name: "description", content: `Read ${prettify(params.slug)} on the AI Tools Hub blog.` },
       { property: "og:title", content: `${prettify(params.slug)} — AI Tools Hub` },
       { property: "og:type", content: "article" },
-      { property: "og:url", content: `/blog/${params.slug}` },
+      { property: "og:url", content: `https://khozoai.com/blog/${params.slug}` },
     ],
-    links: [{ rel: "canonical", href: `/blog/${params.slug}` }],
+    links: [{ rel: "canonical", href: `https://khozoai.com/blog/${params.slug}` }],
   }),
   component: BlogPost,
 });
@@ -35,7 +36,39 @@ function BlogPost() {
   const p = post.data;
   return (
     <article className="mx-auto max-w-3xl px-4 py-12">
-      <Link to="/blog" className="text-sm text-muted-foreground">← Blog</Link>
+      <Breadcrumbs
+        items={[
+          { label: "Blog", href: "/blog" },
+          { label: p.title },
+        ]}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": p.title,
+            ...(p.excerpt ? { "description": p.excerpt } : {}),
+            ...(p.cover_url ? { "image": p.cover_url.startsWith("http") ? p.cover_url : `https://khozoai.com${p.cover_url}` } : {}),
+            "url": `https://khozoai.com/blog/${p.slug}`,
+            "datePublished": p.published_at,
+            "author": {
+              "@type": "Organization",
+              "name": "AI Tools Hub"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "AI Tools Hub",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://khozoai.com/logo.png"
+              }
+            }
+          }),
+        }}
+      />
       {p.category && <div className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">{p.category}</div>}
       <h1 className="font-display text-3xl sm:text-5xl font-bold mt-1">{p.title}</h1>
       {p.published_at && (

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Q } from "@/lib/queries";
 import { ToolCard } from "@/components/ToolCard";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const Route = createFileRoute("/category/$slug")({
   head: ({ params }) => ({
@@ -9,9 +10,9 @@ export const Route = createFileRoute("/category/$slug")({
       { title: `${capitalize(params.slug)} AI Tools — AI Tools Hub` },
       { name: "description", content: `The best ${params.slug.replace(/-/g, " ")} AI tools, ranked and reviewed.` },
       { property: "og:title", content: `${capitalize(params.slug)} AI Tools — AI Tools Hub` },
-      { property: "og:url", content: `/category/${params.slug}` },
+      { property: "og:url", content: `https://khozoai.com/category/${params.slug}` },
     ],
-    links: [{ rel: "canonical", href: `/category/${params.slug}` }],
+    links: [{ rel: "canonical", href: `https://khozoai.com/category/${params.slug}` }],
   }),
   component: CategoryPage,
 });
@@ -38,7 +39,12 @@ function CategoryPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <Link to="/categories" className="text-sm text-muted-foreground hover:text-foreground">← All categories</Link>
+      <Breadcrumbs
+        items={[
+          { label: "Categories", href: "/categories" },
+          { label: cat.data.name },
+        ]}
+      />
       <h1 className="mt-2 font-display text-3xl sm:text-5xl font-bold">
         Best <span className="text-gradient">{cat.data.name}</span> AI Tools
       </h1>

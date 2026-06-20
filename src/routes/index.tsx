@@ -20,9 +20,9 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:title", content: "Khozoai — The Best AI Tools Directory" },
       { property: "og:description", content: "Discover and compare the best AI tools, curated for builders, marketers, and creators." },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: "https://khozoai.com/" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "https://khozoai.com/" }],
   }),
   component: Home,
 });

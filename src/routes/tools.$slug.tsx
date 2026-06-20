@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const Route = createFileRoute("/tools/$slug")({
   head: ({ params }) => ({
@@ -15,10 +16,10 @@ export const Route = createFileRoute("/tools/$slug")({
       { title: `${prettify(params.slug)} — Review, Features & Pricing | AI Tools Hub` },
       { name: "description", content: `In-depth review of ${prettify(params.slug)}: features, pricing, pros/cons, ratings, and alternatives.` },
       { property: "og:title", content: `${prettify(params.slug)} — AI Tools Hub` },
-      { property: "og:url", content: `/tools/${params.slug}` },
+      { property: "og:url", content: `https://khozoai.com/tools/${params.slug}` },
       { property: "og:type", content: "article" },
     ],
-    links: [{ rel: "canonical", href: `/tools/${params.slug}` }],
+    links: [{ rel: "canonical", href: `https://khozoai.com/tools/${params.slug}` }],
   }),
   component: ToolDetail,
 });
@@ -50,6 +51,40 @@ function ToolDetail() {
     queryFn: async () => {
       const { data } = await Q.tools({ categoryId: tool.data!.category_id!, limit: 5 });
       return (data ?? []).filter((t) => t.id !== tool.data!.id).slice(0, 4);
+    },
+  });
+  const relatedPrompts = useQuery({
+    enabled: !!tool.data?.id,
+    queryKey: ["tool", slug, "prompts", tool.data?.category?.name],
+    queryFn: async () => {
+      const categoryName = tool.data?.category?.name;
+      let matched = [];
+      if (categoryName) {
+        const { data } = await Q.prompts({ category: categoryName, limit: 3 });
+        matched = data ?? [];
+      }
+      if (matched.length === 0) {
+        const { data } = await Q.prompts({ limit: 3 });
+        matched = data ?? [];
+      }
+      return matched;
+    },
+  });
+  const relatedBlogs = useQuery({
+    enabled: !!tool.data?.id,
+    queryKey: ["tool", slug, "blogs", tool.data?.category?.name],
+    queryFn: async () => {
+      const categoryName = tool.data?.category?.name;
+      let matched = [];
+      if (categoryName) {
+        const { data } = await Q.blogPosts({ category: categoryName, limit: 3 });
+        matched = data ?? [];
+      }
+      if (matched.length === 0) {
+        const { data } = await Q.blogPosts({ limit: 3 });
+        matched = data ?? [];
+      }
+      return matched;
     },
   });
   const isFav = useQuery({
@@ -88,20 +123,45 @@ function ToolDetail() {
       <Link to="/tools" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         ← Back to tools
       </Link>
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground" aria-label="Breadcrumb">
-        <Link to="/" className="hover:text-foreground">Home</Link>
-        <span>/</span>
-        <Link to="/tools" className="hover:text-foreground">Tools</Link>
-        {t.category && (
-          <>
-            <span>/</span>
-            <Link to="/category/$slug" params={{ slug: t.category.slug }} className="hover:text-foreground">{t.category.name}</Link>
-          </>
-        )}
-        <span>/</span>
-        <span className="truncate text-foreground">{t.name}</span>
-      </nav>
+      
+      <Breadcrumbs
+        items={[
+          { label: "Tools", href: "/tools" },
+          ...(t.category ? [{ label: t.category.name, href: `/category/${t.category.slug}` }] : []),
+          { label: t.name },
+        ]}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": t.name,
+            "description": t.short_description,
+            "applicationCategory": t.category?.name || "MultimediaApplication",
+            "operatingSystem": "All",
+            "url": `https://khozoai.com/tools/${t.slug}`,
+            ...(t.logo_url ? { "image": t.logo_url.startsWith("http") ? t.logo_url : `https://khozoai.com${t.logo_url}` } : {}),
+            "offers": {
+              "@type": "Offer",
+              "price": t.pricing === "free" ? "0" : undefined,
+              "priceCurrency": "USD",
+              "category": t.pricing,
+            },
+            ...(t.review_count > 0 ? {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": Number(t.rating).toFixed(1),
+                "ratingCount": t.review_count,
+                "bestRating": "5",
+                "worstRating": "1",
+              }
+            } : {}),
+          }),
+        }}
+      />
 
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
@@ -255,6 +315,45 @@ function ToolDetail() {
               </div>
               <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alternatives</div>
               <div className="mt-3 space-y-3">{related.data.map((r) => <ToolCard key={r.id} tool={r} />)}</div>
+            </div>
+          )}
+
+          {relatedPrompts.data && relatedPrompts.data.length > 0 && (
+            <div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Useful AI Prompts</div>
+              <div className="space-y-2">
+                {relatedPrompts.data.map((p) => (
+                  <Link
+                    key={p.id}
+                    to="/prompts/$slug"
+                    params={{ slug: p.slug }}
+                    className="card-hover block rounded-lg border border-border bg-card p-3"
+                  >
+                    <div className="text-[10px] uppercase tracking-wider text-primary font-medium">{p.category}</div>
+                    <div className="font-semibold text-sm mt-0.5 truncate">{p.title}</div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{p.description}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {relatedBlogs.data && relatedBlogs.data.length > 0 && (
+            <div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guides & Tutorials</div>
+              <div className="space-y-2">
+                {relatedBlogs.data.map((b) => (
+                  <Link
+                    key={b.id}
+                    to="/blog/$slug"
+                    params={{ slug: b.slug }}
+                    className="card-hover block rounded-lg border border-border bg-card p-3"
+                  >
+                    <div className="font-semibold text-sm truncate">{b.title}</div>
+                    {b.excerpt && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{b.excerpt}</p>}
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
         </aside>

@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const BASE_URL = "";
-
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        const origin = url.origin;
+
         const staticEntries = [
           { path: "/", changefreq: "daily", priority: "1.0" },
           { path: "/tools", changefreq: "daily", priority: "0.9" },
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls = all.map((e) =>
           [
             `  <url>`,
-            `    <loc>${BASE_URL}${e.path}</loc>`,
+            `    <loc>${origin}${e.path}</loc>`,
             `    <changefreq>${e.changefreq}</changefreq>`,
             `    <priority>${e.priority}</priority>`,
             `  </url>`,

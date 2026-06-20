@@ -19,9 +19,9 @@ export const Route = createFileRoute("/compare/")({
       { title: "Compare AI Tools — Side-by-Side | Khozoai" },
       { name: "description", content: "Compare any two AI tools side by side: features, pricing, ratings, and more." },
       { property: "og:title", content: "Compare AI Tools — Khozoai" },
-      { property: "og:url", content: "/compare" },
+      { property: "og:url", content: "https://khozoai.com/compare" },
     ],
-    links: [{ rel: "canonical", href: "/compare" }],
+    links: [{ rel: "canonical", href: "https://khozoai.com/compare" }],
   }),
   component: ComparePage,
 });

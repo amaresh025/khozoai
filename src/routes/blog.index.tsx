@@ -8,9 +8,9 @@ export const Route = createFileRoute("/blog/")({
       { title: "AI Blog — Guides, Reviews & News | AI Tools Hub" },
       { name: "description", content: "Guides, tool reviews, comparisons, and news from the world of AI." },
       { property: "og:title", content: "AI Blog — AI Tools Hub" },
-      { property: "og:url", content: "/blog" },
+      { property: "og:url", content: "https://khozoai.com/blog" },
     ],
-    links: [{ rel: "canonical", href: "/blog" }],
+    links: [{ rel: "canonical", href: "https://khozoai.com/blog" }],
   }),
   component: BlogPage,
 });

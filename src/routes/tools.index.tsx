@@ -26,24 +26,30 @@ export const Route = createFileRoute("/tools/")({
       { title: "All AI Tools — Browse the Full Directory | AI Tools Hub" },
       { name: "description", content: "Browse, filter, and sort every AI tool in our directory by category, pricing, popularity, and rating." },
       { property: "og:title", content: "All AI Tools — AI Tools Hub" },
-      { property: "og:url", content: "/tools" },
+      { property: "og:url", content: "https://khozoai.com/tools" },
     ],
-    links: [{ rel: "canonical", href: "/tools" }],
+    links: [{ rel: "canonical", href: "https://khozoai.com/tools" }],
   }),
   component: ToolsPage,
 });
 
 function ToolsPage() {
   const [sort, setSort] = useState<SortKey>("rating");
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [pricing, setPricing] = useState<string | undefined>(undefined);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await Q.categories()).data ?? [] });
   const tools = useQuery({
-    queryKey: ["tools", "list", { sort, categoryId, pricing }],
-    queryFn: async () => (await Q.tools({ sort, categoryId, pricing, limit: 120 })).data ?? [],
+    queryKey: ["tools", "list", { sort, categoryIds, pricing }],
+    queryFn: async () => (await Q.tools({ sort, categoryIds, pricing, limit: 120 })).data ?? [],
   });
+
+  const handleCategoryToggle = (id: string) => {
+    setCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id]
+    );
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -84,26 +90,28 @@ function ToolsPage() {
           </FilterGroup>
 
           <FilterGroup label="Category">
-            <div className="flex flex-col gap-1">
-              <button
-                onClick={() => setCategoryId(undefined)}
-                className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                  !categoryId ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground"
-                }`}
-              >
-                All categories
-              </button>
-              {cats.data?.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setCategoryId(c.id)}
-                  className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                    categoryId === c.id ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground"
-                  }`}
-                >
-                  {c.name}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-1.5">
+              {cats.data?.map((c) => {
+                const isChecked = categoryIds.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-all select-none ${
+                      isChecked
+                        ? "border-primary/30 bg-primary/5 text-foreground font-medium"
+                        : "border-border/40 bg-surface/30 text-muted-foreground hover:bg-surface hover:text-foreground"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleCategoryToggle(c.id)}
+                      className="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary/20 accent-primary"
+                    />
+                    <span className="truncate">{c.name}</span>
+                  </label>
+                );
+              })}
             </div>
           </FilterGroup>
 
@@ -118,8 +126,8 @@ function ToolsPage() {
             </div>
           </FilterGroup>
 
-          {(categoryId || pricing || sort !== "rating") && (
-            <Button variant="outline" size="sm" className="w-full" onClick={() => { setCategoryId(undefined); setPricing(undefined); setSort("rating"); }}>
+          {(categoryIds.length > 0 || pricing || sort !== "rating") && (
+            <Button variant="outline" size="sm" className="w-full" onClick={() => { setCategoryIds([]); setPricing(undefined); setSort("rating"); }}>
               Reset filters
             </Button>
           )}

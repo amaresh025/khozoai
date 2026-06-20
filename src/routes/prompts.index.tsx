@@ -9,9 +9,9 @@ export const Route = createFileRoute("/prompts/")({
       { title: "AI Prompt Library — Copy-Paste Prompts for ChatGPT, Claude & more" },
       { name: "description", content: "A library of ready-to-use AI prompts for ChatGPT, Claude, Gemini, coding, marketing, SEO, and more." },
       { property: "og:title", content: "AI Prompt Library — AI Tools Hub" },
-      { property: "og:url", content: "/prompts" },
+      { property: "og:url", content: "https://khozoai.com/prompts" },
     ],
-    links: [{ rel: "canonical", href: "/prompts" }],
+    links: [{ rel: "canonical", href: "https://khozoai.com/prompts" }],
   }),
   component: PromptsPage,
 });
