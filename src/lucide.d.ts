@@ -1,0 +1,29 @@
+declare module "lucide-react" {
+  import * as React from "react";
+  export const Star: React.ComponentType<any>;
+  export const BadgeCheck: React.ComponentType<any>;
+  export const Plus: React.ComponentType<any>;
+  export const Search: React.ComponentType<any>;
+  export const Trash2: React.ComponentType<any>;
+  export const Pencil: React.ComponentType<any>;
+  export const Eye: React.ComponentType<any>;
+  export const X: React.ComponentType<any>;
+  export const Loader2: React.ComponentType<any>;
+  export const Sparkles: React.ComponentType<any>;
+  export const AlertTriangle: React.ComponentType<any>;
+  export const Upload: React.ComponentType<any>;
+  export const Link: React.ComponentType<any>;
+  export const FileJson: React.ComponentType<any>;
+  export const FileSpreadsheet: React.ComponentType<any>;
+  export const CheckCircle2: React.ComponentType<any>;
+  export const Wand2: React.ComponentType<any>;
+  export const Globe: React.ComponentType<any>;
+  export const ExternalLink: React.ComponentType<any>;
+  export const Check: React.ComponentType<any>;
+  export const ArrowLeft: React.ComponentType<any>;
+  export const Folder: React.ComponentType<any>;
+  export const Inbox: React.ComponentType<any>;
+  export const MessageSquare: React.ComponentType<any>;
+  export const MousePointerClick: React.ComponentType<any>;
+  export const Wrench: React.ComponentType<any>;
+}
