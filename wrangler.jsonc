@@ -2,15 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tanstack-start-ts",
   "compatibility_date": "2026-06-20",
-  "main": "dist/server/server.js",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
-  "assets": { "directory": "dist/client", "binding": "ASSETS" },
-  "rules": [
-    { "type": "Text", "globs": ["**/*.js"] },
-    { "type": "Text", "globs": ["**/*.css"] },
-    { "type": "Text", "globs": ["**/*.html"] },
-    { "type": "Text", "globs": ["**/*.json"] },
-    { "type": "Text", "globs": ["**/*.svg"] }
-  ]
+  "main": "@tanstack/react-start/server-entry",
+  "observability": { "enabled": true }
 }
