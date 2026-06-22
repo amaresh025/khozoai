@@ -135,6 +135,10 @@ async function enrichWithAI(input: {
     cons: ["Check site for limitations"] as string[],
     platforms: [] as string[],
     use_cases: [] as string[],
+    capabilities: [] as string[],
+    industries: [] as string[],
+    best_for: [] as string[],
+    not_good_for: [] as string[],
     compare_data: {
       coding_quality: "Basic",
       writing_quality: "Basic",
@@ -164,8 +168,16 @@ ${input.bodyText ?? ""}
 Available categories (pick the primary category ID, and secondary category IDs):
 ${categoryList}
 
+CAPABILITY TAXONOMY (use these exact strings when applicable, or add custom ones):
+AI Chatbot, AI Writing, AI Coding, AI Research, AI Search, AI Image Generation, AI Video Generation, AI Voice Generation, AI Music Generation, AI Automation, AI Productivity, AI Design, AI Data Analysis, AI Translation, AI Presentation Creation, AI Resume Building, AI 3D Modeling, AI Education, AI Email, AI SEO, AI Social Media, AI Security, AI Agent, AI Accessibility, AI Accounting, AI Legal, AI Healthcare, AI Customer Support, AI Sales, AI HR, AI Project Management
+
+USE CASE TAXONOMY:
+Blog Writing, SEO, Programming, Code Review, Studying, Marketing, Customer Support, Social Media, Sales, Research, Video Editing, Content Creation, Data Analysis, Design, Automation, Learning, Customer Service, Project Management, Resume Building, Email Management, Image Editing, Voice Over, Music Production, 3D Modeling, Translation, Transcription, Summarization, Copywriting, Ad Campaign, Market Research, Competitor Analysis, Lead Generation, Meeting Notes, Brainstorming, Document Processing, Data Entry, Scheduling, Personal Assistant, Web Scraping, API Integration
+
+INDUSTRY TAXONOMY:
+Education, Finance, Healthcare, Legal, HR, Gaming, Cybersecurity, Ecommerce, Marketing, Real Estate, Media, Transportation, Manufacturing, Agriculture, Government, Nonprofit, Technology, Retail, Insurance, Telecommunications, Energy, Entertainment, Construction, Hospitality, Automotive
+
 Available integrations (choose from: "API Available", "Browser Extension", "Mobile App", "Desktop App", "Team Collaboration")
-Available use cases (choose from: "Research", "Coding", "Content Writing", "SEO", "Marketing", "Automation", "Learning", "Design")
 
 Return strict JSON matching this exact structure:
 {
@@ -181,7 +193,11 @@ Return strict JSON matching this exact structure:
   "pros": ["3-5 strengths / advantages of the tool"],
   "cons": ["2-4 limitations / weak areas / missing features"],
   "platforms": ["array of integrations/platforms the tool supports (from the Integrations list above)"],
-  "use_cases": ["array of best use cases from the Use Cases list above"],
+  "use_cases": ["array of best use cases from the Use Cases list above. Be specific and include ALL that apply"],
+  "capabilities": ["array of capabilities from the Capability Taxonomy above. Include ALL that apply. Add custom capabilities if the tool has unique abilities not in the taxonomy"],
+  "industries": ["array of target industries from the Industry Taxonomy above. Include ALL that apply"],
+  "best_for": ["3-5 specific scenarios where this tool excels. Be concrete, e.g. 'Large codebases', 'Real-time collaboration', 'Beginner-friendly learning'"],
+  "not_good_for": ["2-3 scenarios where this tool is NOT suitable. Be honest, e.g. 'Image generation', 'Offline use', 'Enterprise-scale deployments'"],
   "compare_data": {
     "coding_quality": "Excellent | Good | Basic",
     "writing_quality": "Excellent | Good | Basic",
@@ -231,6 +247,10 @@ Return strict JSON matching this exact structure:
       cons: Array.isArray(parsed.cons) ? parsed.cons.map((c: any) => String(c).slice(0, 200)) : [],
       platforms: Array.isArray(parsed.platforms) ? parsed.platforms.map((pl: any) => String(pl).slice(0, 100)) : [],
       use_cases: Array.isArray(parsed.use_cases) ? parsed.use_cases.map((uc: any) => String(uc).slice(0, 100)) : [],
+      capabilities: Array.isArray(parsed.capabilities) ? parsed.capabilities.map((c: any) => String(c).slice(0, 60)) : [],
+      industries: Array.isArray(parsed.industries) ? parsed.industries.map((i: any) => String(i).slice(0, 60)) : [],
+      best_for: Array.isArray(parsed.best_for) ? parsed.best_for.map((b: any) => String(b).slice(0, 150)) : [],
+      not_good_for: Array.isArray(parsed.not_good_for) ? parsed.not_good_for.map((n: any) => String(n).slice(0, 150)) : [],
       compare_data: parsed.compare_data && typeof parsed.compare_data === "object" ? {
         coding_quality: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.coding_quality) ? parsed.compare_data.coding_quality : "Basic",
         writing_quality: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.writing_quality) ? parsed.compare_data.writing_quality : "Basic",
@@ -335,6 +355,10 @@ export const approveSubmission = createServerFn({ method: "POST" })
         cons: ["Check site for limitations"],
         platforms: [] as string[],
         use_cases: [] as string[],
+        capabilities: [] as string[],
+        industries: [] as string[],
+        best_for: [] as string[],
+        not_good_for: [] as string[],
         compare_data: {
           coding_quality: "Basic",
           writing_quality: "Basic",
@@ -366,6 +390,10 @@ export const approveSubmission = createServerFn({ method: "POST" })
         category_id: enriched.category_id || sub.category_id || null,
         secondary_categories: enriched.secondary_categories,
         use_cases: enriched.use_cases,
+        capabilities: enriched.capabilities,
+        industries: enriched.industries,
+        best_for: enriched.best_for,
+        not_good_for: enriched.not_good_for,
         compare_data: enriched.compare_data,
         needs_review: needsReview,
         pros: enriched.pros,
@@ -493,6 +521,10 @@ export const bulkImport = createServerFn({ method: "POST" })
             cons: ["Check site for limitations"],
             platforms: [],
             use_cases: [],
+            capabilities: [],
+            industries: [],
+            best_for: [],
+            not_good_for: [],
             compare_data: {
               coding_quality: "Basic",
               writing_quality: "Basic",
@@ -523,6 +555,10 @@ export const bulkImport = createServerFn({ method: "POST" })
             category_id: enriched.category_id,
             secondary_categories: enriched.secondary_categories,
             use_cases: enriched.use_cases,
+            capabilities: enriched.capabilities,
+            industries: enriched.industries,
+            best_for: enriched.best_for,
+            not_good_for: enriched.not_good_for,
             compare_data: enriched.compare_data,
             needs_review: needsReview,
             pros: enriched.pros,

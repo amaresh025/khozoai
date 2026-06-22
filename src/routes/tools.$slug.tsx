@@ -4,6 +4,7 @@ import { ExternalLink, Star, BadgeCheck, Heart, Share2, GitCompareArrows, Check,
 import { useEffect } from "react";
 import { Q, logEvent } from "@/lib/queries";
 import { ToolCard } from "@/components/ToolCard";
+import { TagBadge } from "@/components/DynamicCategoryCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +27,15 @@ export const Route = createFileRoute("/tools/$slug")({
 
 function prettify(s: string) {
   return s.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+}
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 function ToolDetail() {
@@ -251,6 +261,66 @@ function ToolDetail() {
               </ul>
             </section>
           )}
+
+          {/* Classification Tags */}
+          {(t.capabilities?.length || t.use_cases?.length || t.industries?.length || t.best_for?.length || t.not_good_for?.length) ? (
+            <section className="space-y-6">
+              {t.capabilities && t.capabilities.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Capabilities</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {t.capabilities.map((cap) => (
+                      <TagBadge key={cap} label={cap} href={`/category/${slugify(cap)}`} variant="capability" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {t.use_cases && t.use_cases.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Use Cases</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {t.use_cases.map((uc) => (
+                      <TagBadge key={uc} label={uc} href={`/use-case/${slugify(uc)}`} variant="use_case" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {t.industries && t.industries.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Industries</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {t.industries.map((ind) => (
+                      <TagBadge key={ind} label={ind} href={`/industry/${slugify(ind)}`} variant="industry" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {t.best_for && t.best_for.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Best For</h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {t.best_for.map((item) => (
+                      <li key={item} className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-medium text-emerald-600">
+                        <Check className="mr-1 h-3 w-3" /> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {t.not_good_for && t.not_good_for.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Not Good For</h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {t.not_good_for.map((item) => (
+                      <li key={item} className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/5 px-3 py-1 text-xs font-medium text-rose-600">
+                        <X className="mr-1 h-3 w-3" /> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          ) : null}
 
           {(t.pros?.length || t.cons?.length) ? (
             <section className="grid gap-4 md:grid-cols-2">

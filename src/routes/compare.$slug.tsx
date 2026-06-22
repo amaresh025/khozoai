@@ -168,6 +168,118 @@ function CompareDetail() {
                 }
               />
               <Row
+                label="Capabilities"
+                a={
+                  <div className="flex flex-wrap gap-1">
+                    {a.data.capabilities && a.data.capabilities.length > 0
+                      ? a.data.capabilities.map((cap) => (
+                          <span key={cap} className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
+                            {cap}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+                b={
+                  <div className="flex flex-wrap gap-1">
+                    {b.data.capabilities && b.data.capabilities.length > 0
+                      ? b.data.capabilities.map((cap) => (
+                          <span key={cap} className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
+                            {cap}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+              />
+              <Row
+                label="Industries"
+                a={
+                  <div className="flex flex-wrap gap-1">
+                    {a.data.industries && a.data.industries.length > 0
+                      ? a.data.industries.map((ind) => (
+                          <span key={ind} className="rounded bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 font-medium">
+                            {ind}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+                b={
+                  <div className="flex flex-wrap gap-1">
+                    {b.data.industries && b.data.industries.length > 0
+                      ? b.data.industries.map((ind) => (
+                          <span key={ind} className="rounded bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 font-medium">
+                            {ind}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
+                }
+              />
+              <Row
+                label="Best For"
+                a={
+                  a.data.best_for && a.data.best_for.length > 0 ? (
+                    <ul className="space-y-1 text-sm">
+                      {a.data.best_for.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+                b={
+                  b.data.best_for && b.data.best_for.length > 0 ? (
+                    <ul className="space-y-1 text-sm">
+                      {b.data.best_for.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+              />
+              <Row
+                label="Not Good For"
+                a={
+                  a.data.not_good_for && a.data.not_good_for.length > 0 ? (
+                    <ul className="space-y-1 text-sm">
+                      {a.data.not_good_for.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+                b={
+                  b.data.not_good_for && b.data.not_good_for.length > 0 ? (
+                    <ul className="space-y-1 text-sm">
+                      {b.data.not_good_for.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )
+                }
+              />
+              <Row
                 label="Integrations / Platforms"
                 a={
                   <div className="flex flex-wrap gap-1">

@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Star, BadgeCheck, Trash2, Pencil, Eye } from "lucide-react";
+import { Plus, Search, Star, BadgeCheck, Trash2, Pencil, Eye, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolEditor } from "@/components/admin/ToolEditor";
+import { useServerFn } from "@tanstack/react-start";
+import { classifyExistingTools } from "@/lib/classifyExistingTools";
 
 export const Route = createFileRoute("/_authenticated/admin/tools")({
   head: () => ({ meta: [{ title: "Tools — Admin" }] }),
@@ -17,6 +19,9 @@ function AdminToolsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [editing, setEditing] = useState<string | "new" | null>(null);
+  const [classifying, setClassifying] = useState(false);
+
+  const classifyFn = useServerFn(classifyExistingTools);
 
   const tools = useQuery({
     queryKey: ["admin", "tools-list", status, search],
@@ -51,6 +56,19 @@ function AdminToolsPage() {
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin"] }); },
   });
 
+  const handleClassify = async () => {
+    setClassifying(true);
+    try {
+      const result = await classifyFn({});
+      toast.success(`Classified ${result.classified} tools, skipped ${result.skipped} (already classified)`);
+      qc.invalidateQueries({ queryKey: ["admin", "tools-list"] });
+    } catch (err: any) {
+      toast.error(`Classification failed: ${err.message}`);
+    } finally {
+      setClassifying(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -58,7 +76,13 @@ function AdminToolsPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Tools</h1>
           <p className="mt-1 text-sm text-muted-foreground">Create, edit, feature, verify, and publish tools.</p>
         </div>
-        <Button onClick={() => setEditing("new")}><Plus className="mr-1 h-4 w-4" /> New tool</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleClassify} disabled={classifying}>
+            {classifying ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
+            Classify Existing
+          </Button>
+          <Button onClick={() => setEditing("new")}><Plus className="mr-1 h-4 w-4" /> New tool</Button>
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-2">
@@ -82,6 +106,7 @@ function AdminToolsPage() {
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Name</th>
                 <th className="px-4 py-3 text-left font-semibold">Status</th>
+                <th className="px-4 py-3 text-left font-semibold">Capabilities</th>
                 <th className="px-4 py-3 text-left font-semibold">Flags</th>
                 <th className="px-4 py-3 text-right font-semibold">Rating</th>
                 <th className="px-4 py-3 text-right font-semibold">Views</th>
@@ -117,6 +142,21 @@ function AdminToolsPage() {
                     </select>
                   </td>
                   <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {t.capabilities && t.capabilities.length > 0
+                        ? t.capabilities.slice(0, 3).map((cap: string) => (
+                            <span key={cap} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              {cap}
+                            </span>
+                          ))
+                        : <span className="text-xs text-muted-foreground">—</span>
+                      }
+                      {t.capabilities && t.capabilities.length > 3 && (
+                        <span className="text-[10px] text-muted-foreground">+{t.capabilities.length - 3}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex gap-1">
                       <FlagBtn active={t.featured} onClick={() => toggle.mutate({ id: t.id, field: "featured", value: !t.featured })} title="Featured">
                         <Star className="h-3.5 w-3.5" />
@@ -144,7 +184,7 @@ function AdminToolsPage() {
                   </td>
                 </tr>
               ))}
-              {tools.data?.length === 0 && <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">No tools found.</td></tr>}
+              {tools.data?.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No tools found.</td></tr>}
             </tbody>
           </table>
         </div>

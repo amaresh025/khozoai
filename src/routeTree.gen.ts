@@ -24,8 +24,10 @@ import { Route as ToolsIndexRouteImport } from './routes/tools.index'
 import { Route as PromptsIndexRouteImport } from './routes/prompts.index'
 import { Route as CompareIndexRouteImport } from './routes/compare.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as UseCaseSlugRouteImport } from './routes/use-case.$slug'
 import { Route as ToolsSlugRouteImport } from './routes/tools.$slug'
 import { Route as PromptsSlugRouteImport } from './routes/prompts.$slug'
+import { Route as IndustrySlugRouteImport } from './routes/industry.$slug'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -114,6 +116,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   path: '/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UseCaseSlugRoute = UseCaseSlugRouteImport.update({
+  id: '/use-case/$slug',
+  path: '/use-case/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ToolsSlugRoute = ToolsSlugRouteImport.update({
   id: '/tools/$slug',
   path: '/tools/$slug',
@@ -122,6 +129,11 @@ const ToolsSlugRoute = ToolsSlugRouteImport.update({
 const PromptsSlugRoute = PromptsSlugRouteImport.update({
   id: '/prompts/$slug',
   path: '/prompts/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndustrySlugRoute = IndustrySlugRouteImport.update({
+  id: '/industry/$slug',
+  path: '/industry/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareSlugRoute = CompareSlugRouteImport.update({
@@ -212,8 +224,10 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/category/$slug': typeof CategorySlugRoute
   '/compare/$slug': typeof CompareSlugRoute
+  '/industry/$slug': typeof IndustrySlugRoute
   '/prompts/$slug': typeof PromptsSlugRoute
   '/tools/$slug': typeof ToolsSlugRoute
+  '/use-case/$slug': typeof UseCaseSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/compare/': typeof CompareIndexRoute
   '/prompts/': typeof PromptsIndexRoute
@@ -242,8 +256,10 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/category/$slug': typeof CategorySlugRoute
   '/compare/$slug': typeof CompareSlugRoute
+  '/industry/$slug': typeof IndustrySlugRoute
   '/prompts/$slug': typeof PromptsSlugRoute
   '/tools/$slug': typeof ToolsSlugRoute
+  '/use-case/$slug': typeof UseCaseSlugRoute
   '/blog': typeof BlogIndexRoute
   '/compare': typeof CompareIndexRoute
   '/prompts': typeof PromptsIndexRoute
@@ -275,8 +291,10 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/category/$slug': typeof CategorySlugRoute
   '/compare/$slug': typeof CompareSlugRoute
+  '/industry/$slug': typeof IndustrySlugRoute
   '/prompts/$slug': typeof PromptsSlugRoute
   '/tools/$slug': typeof ToolsSlugRoute
+  '/use-case/$slug': typeof UseCaseSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/compare/': typeof CompareIndexRoute
   '/prompts/': typeof PromptsIndexRoute
@@ -308,8 +326,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/category/$slug'
     | '/compare/$slug'
+    | '/industry/$slug'
     | '/prompts/$slug'
     | '/tools/$slug'
+    | '/use-case/$slug'
     | '/blog/'
     | '/compare/'
     | '/prompts/'
@@ -338,8 +358,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/category/$slug'
     | '/compare/$slug'
+    | '/industry/$slug'
     | '/prompts/$slug'
     | '/tools/$slug'
+    | '/use-case/$slug'
     | '/blog'
     | '/compare'
     | '/prompts'
@@ -370,8 +392,10 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/category/$slug'
     | '/compare/$slug'
+    | '/industry/$slug'
     | '/prompts/$slug'
     | '/tools/$slug'
+    | '/use-case/$slug'
     | '/blog/'
     | '/compare/'
     | '/prompts/'
@@ -400,8 +424,10 @@ export interface RootRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
   CategorySlugRoute: typeof CategorySlugRoute
   CompareSlugRoute: typeof CompareSlugRoute
+  IndustrySlugRoute: typeof IndustrySlugRoute
   PromptsSlugRoute: typeof PromptsSlugRoute
   ToolsSlugRoute: typeof ToolsSlugRoute
+  UseCaseSlugRoute: typeof UseCaseSlugRoute
   BlogIndexRoute: typeof BlogIndexRoute
   CompareIndexRoute: typeof CompareIndexRoute
   PromptsIndexRoute: typeof PromptsIndexRoute
@@ -515,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/use-case/$slug': {
+      id: '/use-case/$slug'
+      path: '/use-case/$slug'
+      fullPath: '/use-case/$slug'
+      preLoaderRoute: typeof UseCaseSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tools/$slug': {
       id: '/tools/$slug'
       path: '/tools/$slug'
@@ -527,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/prompts/$slug'
       fullPath: '/prompts/$slug'
       preLoaderRoute: typeof PromptsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/industry/$slug': {
+      id: '/industry/$slug'
+      path: '/industry/$slug'
+      fullPath: '/industry/$slug'
+      preLoaderRoute: typeof IndustrySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare/$slug': {
@@ -676,8 +716,10 @@ const rootRouteChildren: RootRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
   CategorySlugRoute: CategorySlugRoute,
   CompareSlugRoute: CompareSlugRoute,
+  IndustrySlugRoute: IndustrySlugRoute,
   PromptsSlugRoute: PromptsSlugRoute,
   ToolsSlugRoute: ToolsSlugRoute,
+  UseCaseSlugRoute: UseCaseSlugRoute,
   BlogIndexRoute: BlogIndexRoute,
   CompareIndexRoute: CompareIndexRoute,
   PromptsIndexRoute: PromptsIndexRoute,

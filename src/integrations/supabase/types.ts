@@ -561,6 +561,10 @@ export type Database = {
           use_cases: string[] | null
           compare_data: Json | null
           needs_review: boolean
+          capabilities: string[] | null
+          industries: string[] | null
+          best_for: string[] | null
+          not_good_for: string[] | null
         }
         Insert: {
           affiliate_url?: string | null
@@ -596,6 +600,10 @@ export type Database = {
           use_cases?: string[] | null
           compare_data?: Json | null
           needs_review?: boolean
+          capabilities?: string[] | null
+          industries?: string[] | null
+          best_for?: string[] | null
+          not_good_for?: string[] | null
         }
         Update: {
           affiliate_url?: string | null
@@ -631,6 +639,10 @@ export type Database = {
           use_cases?: string[] | null
           compare_data?: Json | null
           needs_review?: boolean
+          capabilities?: string[] | null
+          industries?: string[] | null
+          best_for?: string[] | null
+          not_good_for?: string[] | null
         }
         Relationships: [
           {
@@ -674,6 +686,27 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      dynamic_categories: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          capability: string
+          tool_count: number
+        }[]
+      }
+      dynamic_use_cases: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          use_case: string
+          tool_count: number
+        }[]
+      }
+      dynamic_industries: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          industry: string
+          tool_count: number
+        }[]
       }
     }
     Enums: {

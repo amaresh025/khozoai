@@ -6,6 +6,7 @@ import { X, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { enrichUrl } from "@/lib/admin.functions";
+import { CAPABILITY_TAXONOMY, USE_CASE_TAXONOMY, INDUSTRY_TAXONOMY } from "@/lib/queries";
 
 type FormState = {
   name: string;
@@ -29,6 +30,10 @@ type FormState = {
   key_summary: string;
   secondary_categories: string[];
   use_cases: string[];
+  capabilities: string[];
+  industries: string[];
+  best_for: string;
+  not_good_for: string;
   compare_data: {
     coding_quality: string;
     writing_quality: string;
@@ -51,6 +56,10 @@ const empty: FormState = {
   key_summary: "",
   secondary_categories: [],
   use_cases: [],
+  capabilities: [],
+  industries: [],
+  best_for: "",
+  not_good_for: "",
   compare_data: {
     coding_quality: "Basic",
     writing_quality: "Basic",
@@ -108,6 +117,10 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
         key_summary: t.key_summary ?? "",
         secondary_categories: t.secondary_categories ?? [],
         use_cases: t.use_cases ?? [],
+        capabilities: t.capabilities ?? [],
+        industries: t.industries ?? [],
+        best_for: (t.best_for ?? []).join("\n"),
+        not_good_for: (t.not_good_for ?? []).join("\n"),
         compare_data: {
           coding_quality: t.compare_data?.coding_quality ?? "Basic",
           writing_quality: t.compare_data?.writing_quality ?? "Basic",
@@ -145,6 +158,10 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
           cons: (e.cons ?? []).join("\n"),
           platforms: (e.platforms ?? []).join(", "),
           use_cases: e.use_cases ?? prev.use_cases,
+          capabilities: e.capabilities ?? prev.capabilities,
+          industries: e.industries ?? prev.industries,
+          best_for: (e.best_for ?? []).join("\n"),
+          not_good_for: (e.not_good_for ?? []).join("\n"),
           compare_data: {
             coding_quality: e.compare_data?.coding_quality ?? prev.compare_data.coding_quality,
             writing_quality: e.compare_data?.writing_quality ?? prev.compare_data.writing_quality,
@@ -194,6 +211,10 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
         key_summary: form.key_summary || null,
         secondary_categories: form.secondary_categories,
         use_cases: form.use_cases,
+        capabilities: form.capabilities,
+        industries: form.industries,
+        best_for: form.best_for.split("\n").map((s) => s.trim()).filter(Boolean),
+        not_good_for: form.not_good_for.split("\n").map((s) => s.trim()).filter(Boolean),
         compare_data: form.compare_data,
         needs_review: false,
       } as any;
@@ -318,8 +339,8 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
           </Field>
 
           <Field label="Best Use Cases">
-            <div className="grid grid-cols-2 gap-2 mt-1.5 p-3 rounded-lg border border-border bg-background/50">
-              {["Research", "Coding", "Content Writing", "SEO", "Marketing", "Automation", "Learning", "Design"].map((uc) => {
+            <div className="grid grid-cols-2 gap-2 mt-1.5 p-3 rounded-lg border border-border bg-background/50 max-h-48 overflow-y-auto">
+              {USE_CASE_TAXONOMY.map((uc) => {
                 const isChecked = form.use_cases.includes(uc);
                 return (
                   <label key={uc} className="flex items-center gap-2 text-sm cursor-pointer select-none">
@@ -341,6 +362,78 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
                 );
               })}
             </div>
+          </Field>
+
+          <Field label="Capabilities">
+            <div className="grid grid-cols-2 gap-2 mt-1.5 p-3 rounded-lg border border-border bg-background/50 max-h-48 overflow-y-auto">
+              {CAPABILITY_TAXONOMY.map((cap) => {
+                const isChecked = form.capabilities.includes(cap);
+                return (
+                  <label key={cap} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        setForm({
+                          ...form,
+                          capabilities: isChecked
+                            ? form.capabilities.filter((x) => x !== cap)
+                            : [...form.capabilities, cap]
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    {cap}
+                  </label>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label="Industries">
+            <div className="grid grid-cols-2 gap-2 mt-1.5 p-3 rounded-lg border border-border bg-background/50 max-h-40 overflow-y-auto">
+              {INDUSTRY_TAXONOMY.map((ind) => {
+                const isChecked = form.industries.includes(ind);
+                return (
+                  <label key={ind} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        setForm({
+                          ...form,
+                          industries: isChecked
+                            ? form.industries.filter((x) => x !== ind)
+                            : [...form.industries, ind]
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    {ind}
+                  </label>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label="Best For (one per line)">
+            <textarea
+              rows={3}
+              value={form.best_for}
+              onChange={(e) => setForm({ ...form, best_for: e.target.value })}
+              placeholder="Large codebases&#10;Real-time collaboration&#10;Beginner-friendly learning"
+              className="input min-h-[70px]"
+            />
+          </Field>
+
+          <Field label="Not Good For (one per line)">
+            <textarea
+              rows={3}
+              value={form.not_good_for}
+              onChange={(e) => setForm({ ...form, not_good_for: e.target.value })}
+              placeholder="Image generation&#10;Offline use&#10;Enterprise-scale deployments"
+              className="input min-h-[70px]"
+            />
           </Field>
 
           <div className="rounded-xl border border-border bg-surface/50 p-4 space-y-4">

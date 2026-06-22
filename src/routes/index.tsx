@@ -4,7 +4,7 @@ import { Search, TrendingUp, Sparkles, Plus, Award, ArrowRight, ShieldCheck, Zap
 import { useState } from "react";
 import { Q } from "@/lib/queries";
 import { ToolCard } from "@/components/ToolCard";
-import { CategoryCard } from "@/components/CategoryCard";
+import { DynamicCategoryCard } from "@/components/DynamicCategoryCard";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -36,7 +36,7 @@ function Home() {
   const trending = useQuery({ queryKey: ["tools", "trending"], queryFn: async () => (await Q.tools({ sort: "views", limit: 8 })).data ?? [] });
   const newest = useQuery({ queryKey: ["tools", "newest"], queryFn: async () => (await Q.tools({ sort: "newest", limit: 8 })).data ?? [] });
   const topRated = useQuery({ queryKey: ["tools", "top-rated"], queryFn: async () => (await Q.tools({ sort: "rating", limit: 8 })).data ?? [] });
-  const categories = useQuery({ queryKey: ["categories"], queryFn: async () => (await Q.categories()).data ?? [] });
+  const capabilities = useQuery({ queryKey: ["dynamic-categories"], queryFn: () => Q.dynamicCategories() });
   const blogPosts = useQuery({ queryKey: ["blog", "home"], queryFn: async () => (await Q.blogPosts({ limit: 3 })).data ?? [] });
 
   return (
@@ -104,9 +104,11 @@ function Home() {
         <Grid items={featured.data} />
       </Section>
 
-      <Section title="Browse by Category" subtitle="Explore tools across every workflow" href="/categories" hrefLabel="All categories">
+      <Section title="Browse by Capability" subtitle="Explore tools by what they can do" href="/categories" hrefLabel="All categories">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {categories.data?.slice(0, 8).map((c) => <CategoryCard key={c.id} category={c} />)}
+          {capabilities.data?.slice(0, 8).map((c) => (
+            <DynamicCategoryCard key={c.capability} name={c.capability} count={c.tool_count} type="capability" />
+          ))}
         </div>
       </Section>
 
