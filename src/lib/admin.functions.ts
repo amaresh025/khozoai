@@ -1,17 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-
-/**
- * Server functions for admin: URL metadata fetching, AI enrichment, bulk import.
- * All functions require admin or editor role.
- */
-
-async function assertEditor(supabase: any, userId: string) {
-  const { data: admin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  const { data: editor } = await supabase.rpc("has_role", { _user_id: userId, _role: "editor" });
-  if (!admin && !editor) throw new Error("Forbidden: admin or editor role required");
-}
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function slugify(s: string) {
   return s
@@ -61,7 +50,11 @@ function pickMeta(html: string, names: string[]) {
 
 async function fetchSiteMetadata(url: string) {
   let parsed: URL;
-  try { parsed = new URL(url); } catch { throw new Error(`Invalid URL: ${url}`); }
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: ${url}`);
+  }
   let html = "";
   try {
     const r = await fetch(parsed.toString(), {
@@ -79,7 +72,10 @@ async function fetchSiteMetadata(url: string) {
       hostname: parsed.hostname,
       reachable: false,
       error: e?.message ?? "fetch failed",
-      title: null, description: null, ogImage: null, favicon: null,
+      title: null,
+      description: null,
+      ogImage: null,
+      favicon: null,
       bodyText: "",
     };
   }
@@ -92,7 +88,11 @@ async function fetchSiteMetadata(url: string) {
   const favicon = (() => {
     const m = html.match(/<link[^>]+rel=["'](?:shortcut )?icon["'][^>]*href=["']([^"']+)["']/i);
     if (m?.[1]) {
-      try { return new URL(m[1], parsed).toString(); } catch { return null; }
+      try {
+        return new URL(m[1], parsed).toString();
+      } catch {
+        return null;
+      }
     }
     return `${parsed.origin}/favicon.ico`;
   })();
@@ -120,10 +120,12 @@ async function enrichWithAI(input: {
   categories: { id: string; name: string }[];
 }) {
   const key = process.env.LOVABLE_API_KEY;
-  
+
   const fallback = {
     short_description: input.rawDescription?.slice(0, 120) ?? `${input.name} — AI tool`,
-    full_description: input.rawDescription ? `${input.rawDescription}\n\nExplore more details on their official site.` : "",
+    full_description: input.rawDescription
+      ? `${input.rawDescription}\n\nExplore more details on their official site.`
+      : "",
     key_summary: "Enrichment failed or skipped. Review official site for details.",
     category_id: null as string | null,
     secondary_categories: [] as string[],
@@ -148,8 +150,8 @@ async function enrichWithAI(input: {
       voice: false,
       web_search: false,
       file_upload: false,
-      api: false
-    }
+      api: false,
+    },
   };
 
   if (!key) return fallback;
@@ -221,7 +223,11 @@ Return strict JSON matching this exact structure:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are a precise JSON-only assistant. Return ONLY valid JSON, no prose, no markdown fences." },
+          {
+            role: "system",
+            content:
+              "You are a precise JSON-only assistant. Return ONLY valid JSON, no prose, no markdown fences.",
+          },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
@@ -237,31 +243,67 @@ Return strict JSON matching this exact structure:
       short_description: String(parsed.short_description ?? "").slice(0, 200),
       full_description: String(parsed.full_description ?? "").slice(0, 3000),
       key_summary: String(parsed.key_summary ?? "").slice(0, 1000),
-      category_id: typeof parsed.category_id === "string" && parsed.category_id.length === 36 ? parsed.category_id : null,
-      secondary_categories: Array.isArray(parsed.secondary_categories) ? parsed.secondary_categories.filter((x: any) => typeof x === "string" && x.length === 36) : [],
-      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 8).map((t: any) => String(t).toLowerCase().slice(0, 32)) : [],
-      pricing: ["free", "freemium", "paid", "subscription", "contact"].includes(parsed.pricing) ? parsed.pricing : "freemium",
+      category_id:
+        typeof parsed.category_id === "string" && parsed.category_id.length === 36
+          ? parsed.category_id
+          : null,
+      secondary_categories: Array.isArray(parsed.secondary_categories)
+        ? parsed.secondary_categories.filter((x: any) => typeof x === "string" && x.length === 36)
+        : [],
+      tags: Array.isArray(parsed.tags)
+        ? parsed.tags.slice(0, 8).map((t: any) => String(t).toLowerCase().slice(0, 32))
+        : [],
+      pricing: ["free", "freemium", "paid", "subscription", "contact"].includes(parsed.pricing)
+        ? parsed.pricing
+        : "freemium",
       pricing_details: parsed.pricing_details ? String(parsed.pricing_details).slice(0, 500) : null,
-      features: Array.isArray(parsed.features) ? parsed.features.map((f: any) => String(f).slice(0, 100)) : [],
+      features: Array.isArray(parsed.features)
+        ? parsed.features.map((f: any) => String(f).slice(0, 100))
+        : [],
       pros: Array.isArray(parsed.pros) ? parsed.pros.map((p: any) => String(p).slice(0, 200)) : [],
       cons: Array.isArray(parsed.cons) ? parsed.cons.map((c: any) => String(c).slice(0, 200)) : [],
-      platforms: Array.isArray(parsed.platforms) ? parsed.platforms.map((pl: any) => String(pl).slice(0, 100)) : [],
-      use_cases: Array.isArray(parsed.use_cases) ? parsed.use_cases.map((uc: any) => String(uc).slice(0, 100)) : [],
-      capabilities: Array.isArray(parsed.capabilities) ? parsed.capabilities.map((c: any) => String(c).slice(0, 60)) : [],
-      industries: Array.isArray(parsed.industries) ? parsed.industries.map((i: any) => String(i).slice(0, 60)) : [],
-      best_for: Array.isArray(parsed.best_for) ? parsed.best_for.map((b: any) => String(b).slice(0, 150)) : [],
-      not_good_for: Array.isArray(parsed.not_good_for) ? parsed.not_good_for.map((n: any) => String(n).slice(0, 150)) : [],
-      compare_data: parsed.compare_data && typeof parsed.compare_data === "object" ? {
-        coding_quality: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.coding_quality) ? parsed.compare_data.coding_quality : "Basic",
-        writing_quality: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.writing_quality) ? parsed.compare_data.writing_quality : "Basic",
-        research: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.research) ? parsed.compare_data.research : "Basic",
-        image_generation: !!parsed.compare_data.image_generation,
-        video_generation: !!parsed.compare_data.video_generation,
-        voice: !!parsed.compare_data.voice,
-        web_search: !!parsed.compare_data.web_search,
-        file_upload: !!parsed.compare_data.file_upload,
-        api: !!parsed.compare_data.api
-      } : fallback.compare_data
+      platforms: Array.isArray(parsed.platforms)
+        ? parsed.platforms.map((pl: any) => String(pl).slice(0, 100))
+        : [],
+      use_cases: Array.isArray(parsed.use_cases)
+        ? parsed.use_cases.map((uc: any) => String(uc).slice(0, 100))
+        : [],
+      capabilities: Array.isArray(parsed.capabilities)
+        ? parsed.capabilities.map((c: any) => String(c).slice(0, 60))
+        : [],
+      industries: Array.isArray(parsed.industries)
+        ? parsed.industries.map((i: any) => String(i).slice(0, 60))
+        : [],
+      best_for: Array.isArray(parsed.best_for)
+        ? parsed.best_for.map((b: any) => String(b).slice(0, 150))
+        : [],
+      not_good_for: Array.isArray(parsed.not_good_for)
+        ? parsed.not_good_for.map((n: any) => String(n).slice(0, 150))
+        : [],
+      compare_data:
+        parsed.compare_data && typeof parsed.compare_data === "object"
+          ? {
+              coding_quality: ["Excellent", "Good", "Basic"].includes(
+                parsed.compare_data.coding_quality,
+              )
+                ? parsed.compare_data.coding_quality
+                : "Basic",
+              writing_quality: ["Excellent", "Good", "Basic"].includes(
+                parsed.compare_data.writing_quality,
+              )
+                ? parsed.compare_data.writing_quality
+                : "Basic",
+              research: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.research)
+                ? parsed.compare_data.research
+                : "Basic",
+              image_generation: !!parsed.compare_data.image_generation,
+              video_generation: !!parsed.compare_data.video_generation,
+              voice: !!parsed.compare_data.voice,
+              web_search: !!parsed.compare_data.web_search,
+              file_upload: !!parsed.compare_data.file_upload,
+              api: !!parsed.compare_data.api,
+            }
+          : fallback.compare_data,
     };
   } catch (e) {
     console.error("AI enrichment failed", e);
@@ -274,13 +316,11 @@ Return strict JSON matching this exact structure:
    ============================================================ */
 
 export const enrichUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ url: z.string().url(), name: z.string().optional() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
+  .handler(async ({ data }) => {
     const meta = await fetchSiteMetadata(data.url);
     const name = (data.name ?? meta.title ?? meta.hostname ?? "").trim();
-    const { data: cats } = await context.supabase.from("categories").select("id,name");
+    const { data: cats } = await supabaseAdmin.from("categories").select("id,name");
     const enriched = await enrichWithAI({
       name,
       url: meta.url,
@@ -292,168 +332,33 @@ export const enrichUrl = createServerFn({ method: "POST" })
     return { meta, name, enriched };
   });
 
-export const approveSubmission = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ submissionId: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    
-    // 1. Fetch submission details
-    const { data: sub, error: subErr } = await context.supabase
-      .from("submissions")
-      .select("*")
-      .eq("id", data.submissionId)
-      .maybeSingle();
-    if (subErr) throw subErr;
-    if (!sub) throw new Error("Submission not found");
-    if (sub.status !== "pending") throw new Error("Submission is already processed");
-
-    // 2. Fetch categories for AI selection
-    const { data: cats } = await context.supabase.from("categories").select("id,name");
-
-    // 3. Fetch site metadata
-    const meta = await fetchSiteMetadata(sub.website_url);
-
-    // 4. Generate unique slug
-    const base = (sub.name || "tool").toLowerCase().trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .slice(0, 70) || "tool";
-    let slug = base;
-    for (let i = 2; i < 50; i++) {
-      const { data: hit } = await context.supabase.from("tools").select("id").eq("slug", slug).maybeSingle();
-      if (!hit) break;
-      slug = `${base}-${i}`;
-    }
-
-    // 5. Run AI enrichment
-    let enriched;
-    let needsReview = false;
-    try {
-      enriched = await enrichWithAI({
-        name: sub.name,
-        url: meta.url,
-        rawTitle: meta.title,
-        rawDescription: meta.description,
-        bodyText: meta.bodyText,
-        categories: cats ?? [],
-      });
-    } catch (enrichErr) {
-      needsReview = true;
-      enriched = {
-        short_description: sub.short_description || meta.description?.slice(0, 120) || `${sub.name} — AI tool`,
-        full_description: meta.description || sub.short_description || "",
-        key_summary: "Enrichment failed. Needs manual review.",
-        category_id: sub.category_id || null,
-        secondary_categories: [] as string[],
-        tags: [] as string[],
-        pricing: (sub.pricing || "freemium") as any,
-        pricing_details: null,
-        features: ["AI Capabilities"],
-        pros: ["Available on Web"],
-        cons: ["Check site for limitations"],
-        platforms: [] as string[],
-        use_cases: [] as string[],
-        capabilities: [] as string[],
-        industries: [] as string[],
-        best_for: [] as string[],
-        not_good_for: [] as string[],
-        compare_data: {
-          coding_quality: "Basic",
-          writing_quality: "Basic",
-          research: "Basic",
-          image_generation: false,
-          video_generation: false,
-          voice: false,
-          web_search: false,
-          file_upload: false,
-          api: false
-        }
-      };
-    }
-
-    // 6. Insert into tools table
-    const { data: inserted, error: insErr } = await context.supabase
-      .from("tools")
-      .insert({
-        name: sub.name,
-        slug,
-        short_description: enriched.short_description || sub.short_description || `${sub.name} — AI tool`,
-        full_description: enriched.full_description || null,
-        key_summary: enriched.key_summary || null,
-        website_url: meta.url,
-        logo_url: meta.favicon || null,
-        cover_url: (meta as any).ogImage || null,
-        pricing: enriched.pricing,
-        pricing_details: enriched.pricing_details || null,
-        category_id: enriched.category_id || sub.category_id || null,
-        secondary_categories: enriched.secondary_categories,
-        use_cases: enriched.use_cases,
-        capabilities: enriched.capabilities,
-        industries: enriched.industries,
-        best_for: enriched.best_for,
-        not_good_for: enriched.not_good_for,
-        compare_data: enriched.compare_data,
-        needs_review: needsReview,
-        pros: enriched.pros,
-        cons: enriched.cons,
-        platforms: enriched.platforms,
-        status: "approved",
-        published_at: new Date().toISOString(),
-        submitted_by: sub.submitter_id,
-      })
-      .select("id")
-      .single();
-    
-    if (insErr) throw insErr;
-
-    // 7. Insert features
-    if (enriched.features?.length) {
-      await context.supabase.from("tool_features").insert(
-        enriched.features.map((feature: string, idx: number) => ({
-          tool_id: inserted.id,
-          feature,
-          sort_order: idx + 1
-        }))
-      );
-    }
-
-    // 8. Insert tags
-    if (enriched.tags?.length) {
-      await context.supabase.from("tool_tags").insert(
-        enriched.tags.map((tag: string) => ({ tool_id: inserted.id, tag })),
-      );
-    }
-
-    // 9. Update submission status to approved
-    const { error: updErr } = await context.supabase
-      .from("submissions")
-      .update({ status: "approved" })
-      .eq("id", data.submissionId);
-    if (updErr) throw updErr;
-
-    return { success: true, toolId: inserted.id, slug, needsReview };
-  });
-
 const importItemSchema = z.object({
   name: z.string().min(1).max(200),
   website_url: z.string().url(),
 });
 
 export const bulkImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      items: z.array(importItemSchema).min(1).max(50),
-      enrich: z.boolean().default(true),
-    }).parse(d),
+    z
+      .object({
+        items: z.array(importItemSchema).min(1).max(50),
+        enrich: z.boolean().default(true),
+      })
+      .parse(d),
   )
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { data: cats } = await context.supabase.from("categories").select("id,name");
-    const { data: allTools } = await context.supabase.from("tools").select("id, name, slug, website_url");
-    const results: Array<{ name: string; url: string; status: "imported" | "duplicate" | "error"; message?: string; slug?: string; toolId?: string }> = [];
+  .handler(async ({ data }) => {
+    const { data: cats } = await supabaseAdmin.from("categories").select("id,name");
+    const { data: allTools } = await supabaseAdmin
+      .from("tools")
+      .select("id, name, slug, website_url");
+    const results: Array<{
+      name: string;
+      url: string;
+      status: "imported" | "duplicate" | "error";
+      message?: string;
+      slug?: string;
+      toolId?: string;
+    }> = [];
 
     // Local mutable copy of tools for in-session duplicate checks
     const localTools = allTools ? [...allTools] : [];
@@ -478,15 +383,25 @@ export const bulkImport = createServerFn({ method: "POST" })
           if (normalizedTName === normalizedInputName) return true;
           if (tSlug === slug) return true;
           if (tHost === host) return true;
-          if (normalizedInputName.length > 3 && normalizedTName.length > 3 &&
-              (normalizedInputName.includes(normalizedTName) || normalizedTName.includes(normalizedInputName))) {
+          if (
+            normalizedInputName.length > 3 &&
+            normalizedTName.length > 3 &&
+            (normalizedInputName.includes(normalizedTName) ||
+              normalizedTName.includes(normalizedInputName))
+          ) {
             return true;
           }
           return false;
         });
 
         if (existing) {
-          results.push({ name: item.name, url: item.website_url, status: "duplicate", message: "Already exists", slug: existing.slug });
+          results.push({
+            name: item.name,
+            url: item.website_url,
+            status: "duplicate",
+            message: "Already exists",
+            slug: existing.slug,
+          });
           continue;
         }
 
@@ -534,12 +449,12 @@ export const bulkImport = createServerFn({ method: "POST" })
               voice: false,
               web_search: false,
               file_upload: false,
-              api: false
-            }
+              api: false,
+            },
           };
         }
 
-        const { data: inserted, error } = await context.supabase
+        const { data: inserted, error } = await supabaseAdmin
           .from("tools")
           .insert({
             name: item.name,
@@ -565,7 +480,7 @@ export const bulkImport = createServerFn({ method: "POST" })
             cons: enriched.cons,
             platforms: enriched.platforms,
             status: "pending",
-            submitted_by: context.userId,
+            submitted_by: null,
           })
           .select("id,slug")
           .single();
@@ -575,23 +490,23 @@ export const bulkImport = createServerFn({ method: "POST" })
           id: inserted.id,
           name: item.name,
           slug: inserted.slug,
-          website_url: meta.url
+          website_url: meta.url,
         });
 
         if (enriched.features?.length) {
-          await context.supabase.from("tool_features").insert(
+          await supabaseAdmin.from("tool_features").insert(
             enriched.features.map((feature: string, idx: number) => ({
               tool_id: inserted.id,
               feature,
-              sort_order: idx + 1
-            }))
+              sort_order: idx + 1,
+            })),
           );
         }
 
         if (enriched.tags?.length) {
-          await context.supabase.from("tool_tags").insert(
-            enriched.tags.map((tag: string) => ({ tool_id: inserted.id, tag })),
-          );
+          await supabaseAdmin
+            .from("tool_tags")
+            .insert(enriched.tags.map((tag: string) => ({ tool_id: inserted.id, tag })));
         }
 
         results.push({
@@ -600,38 +515,41 @@ export const bulkImport = createServerFn({ method: "POST" })
           status: "imported",
           message: needsReview ? "Needs Review" : undefined,
           slug: inserted.slug,
-          toolId: inserted.id
+          toolId: inserted.id,
         });
       } catch (e: any) {
-        results.push({ name: item.name, url: item.website_url, status: "error", message: e?.message ?? "import failed" });
+        results.push({
+          name: item.name,
+          url: item.website_url,
+          status: "error",
+          message: e?.message ?? "import failed",
+        });
       }
     }
 
     return { results };
   });
 
-export const dataQualityScan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { data: tools } = await context.supabase
-      .from("tools")
-      .select("id,slug,name,website_url,logo_url,short_description,category_id,status");
-    const issues: Array<{ toolId: string; slug: string; name: string; problems: string[] }> = [];
-    const bySlug = new Map<string, number>();
-    const byUrl = new Map<string, number>();
-    for (const t of tools ?? []) {
-      bySlug.set(t.slug, (bySlug.get(t.slug) ?? 0) + 1);
-      byUrl.set(t.website_url, (byUrl.get(t.website_url) ?? 0) + 1);
-    }
-    for (const t of tools ?? []) {
-      const problems: string[] = [];
-      if (!t.logo_url) problems.push("Missing logo");
-      if (!t.category_id) problems.push("Missing category");
-      if (!t.short_description || t.short_description.length < 30) problems.push("Short description too brief");
-      if ((bySlug.get(t.slug) ?? 0) > 1) problems.push("Duplicate slug");
-      if ((byUrl.get(t.website_url) ?? 0) > 1) problems.push("Duplicate URL");
-      if (problems.length) issues.push({ toolId: t.id, slug: t.slug, name: t.name, problems });
-    }
-    return { totalTools: tools?.length ?? 0, issueCount: issues.length, issues };
-  });
+export const dataQualityScan = createServerFn({ method: "POST" }).handler(async () => {
+  const { data: tools } = await supabaseAdmin
+    .from("tools")
+    .select("id,slug,name,website_url,logo_url,short_description,category_id,status");
+  const issues: Array<{ toolId: string; slug: string; name: string; problems: string[] }> = [];
+  const bySlug = new Map<string, number>();
+  const byUrl = new Map<string, number>();
+  for (const t of tools ?? []) {
+    bySlug.set(t.slug, (bySlug.get(t.slug) ?? 0) + 1);
+    byUrl.set(t.website_url, (byUrl.get(t.website_url) ?? 0) + 1);
+  }
+  for (const t of tools ?? []) {
+    const problems: string[] = [];
+    if (!t.logo_url) problems.push("Missing logo");
+    if (!t.category_id) problems.push("Missing category");
+    if (!t.short_description || t.short_description.length < 30)
+      problems.push("Short description too brief");
+    if ((bySlug.get(t.slug) ?? 0) > 1) problems.push("Duplicate slug");
+    if ((byUrl.get(t.website_url) ?? 0) > 1) problems.push("Duplicate URL");
+    if (problems.length) issues.push({ toolId: t.id, slug: t.slug, name: t.name, problems });
+  }
+  return { totalTools: tools?.length ?? 0, issueCount: issues.length, issues };
+});

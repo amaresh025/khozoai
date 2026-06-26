@@ -1,10 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, LineChart, Line } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+} from "recharts";
 import { Eye, MousePointerClick, Search as SearchIcon, TrendingUp } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin/analytics")({
+export const Route = createFileRoute("/admin/analytics")({
   head: () => ({ meta: [{ title: "Analytics — Admin" }] }),
   component: AdminAnalytics,
 });
@@ -16,14 +26,25 @@ function AdminAnalytics() {
   const events = useQuery({
     queryKey: ["admin", "analytics", days],
     queryFn: async () => {
-      const { data } = await supabase.from("analytics_events").select("event_type,tool_id,metadata,created_at").gte("created_at", sinceISO).limit(5000);
+      const { data } = await supabase
+        .from("analytics_events")
+        .select("event_type,tool_id,metadata,created_at")
+        .gte("created_at", sinceISO)
+        .limit(5000);
       return data ?? [];
     },
   });
 
   const topTools = useQuery({
     queryKey: ["admin", "analytics", "top-tools"],
-    queryFn: async () => (await supabase.from("tools").select("id,name,slug,views,clicks").order("views", { ascending: false }).limit(10)).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("tools")
+          .select("id,name,slug,views,clicks")
+          .order("views", { ascending: false })
+          .limit(10)
+      ).data ?? [],
   });
 
   const cats = useQuery({
@@ -33,7 +54,11 @@ function AdminAnalytics() {
       if (!cs) return [];
       const counts = await Promise.all(
         cs.map(async (c) => {
-          const r = await supabase.from("tools").select("id", { count: "exact", head: true }).eq("category_id", c.id).eq("status", "approved");
+          const r = await supabase
+            .from("tools")
+            .select("id", { count: "exact", head: true })
+            .eq("category_id", c.id)
+            .eq("status", "approved");
           return { name: c.name, count: r.count ?? 0 };
         }),
       );
@@ -67,7 +92,10 @@ function AdminAnalytics() {
       if (typeof q !== "string" || !q) continue;
       counts.set(q.toLowerCase(), (counts.get(q.toLowerCase()) ?? 0) + 1);
     }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([term, count]) => ({ term, count }));
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([term, count]) => ({ term, count }));
   })();
 
   const totalViews = byDay.reduce((s, d) => s + d.views, 0);
@@ -85,20 +113,44 @@ function AdminAnalytics() {
         <Kpi label="Views" value={totalViews} icon={Eye} />
         <Kpi label="Clicks" value={totalClicks} icon={MousePointerClick} />
         <Kpi label="CTR" value={`${ctr}%`} icon={TrendingUp} />
-        <Kpi label="Searches" value={searchTerms.reduce((s, t) => s + t.count, 0)} icon={SearchIcon} />
+        <Kpi
+          label="Searches"
+          value={searchTerms.reduce((s, t) => s + t.count, 0)}
+          icon={SearchIcon}
+        />
       </div>
 
       <section className="rounded-xl border border-border bg-card p-5">
-        <h2 className="mb-4 font-display text-lg font-bold tracking-tight">Views & clicks (daily)</h2>
+        <h2 className="mb-4 font-display text-lg font-bold tracking-tight">
+          Views & clicks (daily)
+        </h2>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={byDay}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-              <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-              <Line type="monotone" dataKey="views" stroke="var(--color-primary)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="clicks" stroke="var(--color-brand-2)" strokeWidth={2} dot={false} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--color-card)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 8,
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="views"
+                stroke="var(--color-primary)"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="clicks"
+                stroke="var(--color-brand-2)"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -106,14 +158,28 @@ function AdminAnalytics() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-5">
-          <h2 className="mb-4 font-display text-lg font-bold tracking-tight">Top tools (all-time views)</h2>
+          <h2 className="mb-4 font-display text-lg font-bold tracking-tight">
+            Top tools (all-time views)
+          </h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topTools.data ?? []} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
-                <YAxis dataKey="name" type="category" width={110} stroke="var(--color-muted-foreground)" fontSize={11} />
-                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={110}
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={11}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 8,
+                  }}
+                />
                 <Bar dataKey="views" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -126,8 +192,20 @@ function AdminAnalytics() {
               <BarChart data={cats.data ?? []} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
-                <YAxis dataKey="name" type="category" width={110} stroke="var(--color-muted-foreground)" fontSize={11} />
-                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={110}
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={11}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 8,
+                  }}
+                />
                 <Bar dataKey="count" fill="var(--color-brand-2)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -143,7 +221,9 @@ function AdminAnalytics() {
           <ul className="divide-y divide-border text-sm">
             {searchTerms.map((t) => (
               <li key={t.term} className="flex items-center justify-between py-2">
-                <Link to="/search" search={{ q: t.term }} className="hover:text-primary">{t.term}</Link>
+                <Link to="/search" search={{ q: t.term }} className="hover:text-primary">
+                  {t.term}
+                </Link>
                 <span className="tabular-nums text-muted-foreground">{t.count}</span>
               </li>
             ))}
@@ -158,7 +238,9 @@ function Kpi({ label, value, icon: Icon }: { label: string; value: number | stri
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </div>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="mt-2 font-display text-3xl font-bold tabular-nums">{value}</div>

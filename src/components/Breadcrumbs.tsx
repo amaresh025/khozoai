@@ -12,23 +12,24 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
-  const allItems = [
-    { label: "Home", href: "/" },
-    ...items,
-  ];
+  const allItems = [{ label: "Home", href: "/" }, ...items];
 
   const baseOrigin = typeof window !== "undefined" ? window.location.origin : "https://khozoai.com";
 
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    "itemListElement": allItems.map((item, index) => {
-      const itemUrl = item.href ? (item.href.startsWith("http") ? item.href : `${baseOrigin}${item.href}`) : undefined;
+    itemListElement: allItems.map((item, index) => {
+      const itemUrl = item.href
+        ? item.href.startsWith("http")
+          ? item.href
+          : `${baseOrigin}${item.href}`
+        : undefined;
       return {
         "@type": "ListItem",
-        "position": index + 1,
-        "name": item.label,
-        ...(itemUrl ? { "item": itemUrl } : {}),
+        position: index + 1,
+        name: item.label,
+        ...(itemUrl ? { item: itemUrl } : {}),
       };
     }),
   };
@@ -39,7 +40,10 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
-      <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <nav
+        className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
+        aria-label="Breadcrumb"
+      >
         {allItems.map((item, index) => {
           const isLast = index === allItems.length - 1;
           const showChevron = index < allItems.length - 1;
@@ -56,12 +60,16 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
                   <span>{item.label}</span>
                 </Link>
               ) : (
-                <span className={`truncate flex items-center gap-1 ${isLast ? "text-foreground font-medium" : ""}`}>
+                <span
+                  className={`truncate flex items-center gap-1 ${isLast ? "text-foreground font-medium" : ""}`}
+                >
                   {index === 0 && <Home className="h-3.5 w-3.5 shrink-0" />}
                   <span>{item.label}</span>
                 </span>
               )}
-              {showChevron && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />}
+              {showChevron && (
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+              )}
             </div>
           );
         })}

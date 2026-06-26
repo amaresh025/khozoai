@@ -12,7 +12,10 @@ export const Route = createFileRoute("/search")({
   head: () => ({
     meta: [
       { title: "Search AI Tools — AI Tools Hub" },
-      { name: "description", content: "Search across hundreds of AI tools by name, category, or use case." },
+      {
+        name: "description",
+        content: "Search across hundreds of AI tools by name, category, or use case.",
+      },
       { property: "og:url", content: "/search" },
     ],
     links: [{ rel: "canonical", href: "/search" }],
@@ -28,7 +31,9 @@ function SearchPage() {
     queryFn: async () => (await Q.tools({ search: q, limit: 60 })).data ?? [],
   });
 
-  useEffect(() => { if (q) logEvent("search", { q }); }, [q]);
+  useEffect(() => {
+    if (q) logEvent("search", { q });
+  }, [q]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -39,12 +44,15 @@ function SearchPage() {
         {tools.data ? `${tools.data.length} tools found` : "Search across our directory"}
       </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {tools.data?.map((t) => <ToolCard key={t.id} tool={t} />)}
+        {tools.data?.map((t) => (
+          <ToolCard key={t.id} tool={t} />
+        ))}
       </div>
       {tools.data?.length === 0 && (
-        <p className="mt-12 text-center text-muted-foreground">No tools found. Try a different keyword.</p>
+        <p className="mt-12 text-center text-muted-foreground">
+          No tools found. Try a different keyword.
+        </p>
       )}
     </div>
   );
 }
-

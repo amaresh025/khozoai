@@ -28,10 +28,12 @@ export function ToolCard({ tool }: { tool: Tool }) {
               height={44}
               loading="lazy"
               className="h-full w-full object-contain"
-              onError={(e) => ((e.currentTarget.style.display = "none"))}
+              onError={(e) => (e.currentTarget.style.display = "none")}
             />
           ) : (
-            <span className="font-display text-base font-semibold text-foreground/70">{tool.name[0]}</span>
+            <span className="font-display text-base font-semibold text-foreground/70">
+              {tool.name[0]}
+            </span>
           )}
         </div>
         <div className="min-w-0 flex-1">

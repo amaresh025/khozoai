@@ -14,10 +14,6 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/tools", changefreq: "daily", priority: "0.9" },
           { path: "/categories", changefreq: "weekly", priority: "0.8" },
           { path: "/compare", changefreq: "weekly", priority: "0.7" },
-          { path: "/prompts", changefreq: "weekly", priority: "0.8" },
-          { path: "/blog", changefreq: "weekly", priority: "0.8" },
-          { path: "/submit", changefreq: "monthly", priority: "0.5" },
-          { path: "/promote", changefreq: "monthly", priority: "0.5" },
           { path: "/about", changefreq: "monthly", priority: "0.4" },
           { path: "/contact", changefreq: "monthly", priority: "0.4" },
           { path: "/privacy", changefreq: "yearly", priority: "0.3" },
@@ -26,19 +22,27 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         let dynamicEntries: { path: string; changefreq: string; priority: string }[] = [];
         try {
-          const [tools, cats, prompts, posts, comps] = await Promise.all([
+          const [tools, cats, comps] = await Promise.all([
             supabaseAdmin.from("tools").select("slug").eq("status", "approved"),
             supabaseAdmin.from("categories").select("slug"),
-            supabaseAdmin.from("prompt_templates").select("slug"),
-            supabaseAdmin.from("blog_posts").select("slug").eq("published", true),
             supabaseAdmin.from("tool_comparisons").select("slug"),
           ]);
           dynamicEntries = [
-            ...(tools.data ?? []).map((r) => ({ path: `/tools/${r.slug}`, changefreq: "weekly", priority: "0.7" })),
-            ...(cats.data ?? []).map((r) => ({ path: `/category/${r.slug}`, changefreq: "weekly", priority: "0.7" })),
-            ...(prompts.data ?? []).map((r) => ({ path: `/prompts/${r.slug}`, changefreq: "monthly", priority: "0.6" })),
-            ...(posts.data ?? []).map((r) => ({ path: `/blog/${r.slug}`, changefreq: "monthly", priority: "0.6" })),
-            ...(comps.data ?? []).map((r) => ({ path: `/compare/${r.slug}`, changefreq: "monthly", priority: "0.6" })),
+            ...(tools.data ?? []).map((r) => ({
+              path: `/tools/${r.slug}`,
+              changefreq: "weekly",
+              priority: "0.7",
+            })),
+            ...(cats.data ?? []).map((r) => ({
+              path: `/category/${r.slug}`,
+              changefreq: "weekly",
+              priority: "0.7",
+            })),
+            ...(comps.data ?? []).map((r) => ({
+              path: `/compare/${r.slug}`,
+              changefreq: "monthly",
+              priority: "0.6",
+            })),
           ];
         } catch (e) {
           console.error("sitemap dynamic entries failed", e);

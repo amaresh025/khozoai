@@ -17,7 +17,10 @@ export const Route = createFileRoute("/compare/")({
   head: () => ({
     meta: [
       { title: "Compare AI Tools — Side-by-Side | Khozoai" },
-      { name: "description", content: "Compare any two AI tools side by side: features, pricing, ratings, and more." },
+      {
+        name: "description",
+        content: "Compare any two AI tools side by side: features, pricing, ratings, and more.",
+      },
       { property: "og:title", content: "Compare AI Tools — Khozoai" },
       { property: "og:url", content: "https://khozoai.com/compare" },
     ],
@@ -55,11 +58,17 @@ function ComparePage() {
     navigate({ to: "/compare/$slug", params: { slug: `${a.slug}-vs-${b.slug}` } });
   }
 
-  const comparisons = useQuery({ queryKey: ["comparisons"], queryFn: async () => (await Q.comparisons()).data ?? [] });
+  const comparisons = useQuery({
+    queryKey: ["comparisons"],
+    queryFn: async () => (await Q.comparisons()).data ?? [],
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:py-12">
-      <Link to="/tools" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/tools"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to tools
       </Link>
       <h1 className="mt-3 font-display text-3xl sm:text-5xl font-bold">
@@ -68,10 +77,28 @@ function ComparePage() {
       <p className="mt-2 text-muted-foreground">Pick any two tools to compare side by side.</p>
 
       <div className="mt-8 rounded-2xl border border-border bg-card p-4 sm:p-6 grid gap-3 sm:gap-4 sm:grid-cols-[1fr_auto_1fr_auto] items-stretch sm:items-center">
-        <ToolPicker label="Tool A" value={a} onChange={setA} tools={tools.data ?? []} excludeId={b?.id} />
-        <div className="text-center font-display text-xl sm:text-2xl text-gradient self-center">vs</div>
-        <ToolPicker label="Tool B" value={b} onChange={setB} tools={tools.data ?? []} excludeId={a?.id} />
-        <Button onClick={go} disabled={!a || !b || a?.id === b?.id} className="h-12 bg-gradient-brand text-white border-0">
+        <ToolPicker
+          label="Tool A"
+          value={a}
+          onChange={setA}
+          tools={tools.data ?? []}
+          excludeId={b?.id}
+        />
+        <div className="text-center font-display text-xl sm:text-2xl text-gradient self-center">
+          vs
+        </div>
+        <ToolPicker
+          label="Tool B"
+          value={b}
+          onChange={setB}
+          tools={tools.data ?? []}
+          excludeId={a?.id}
+        />
+        <Button
+          onClick={go}
+          disabled={!a || !b || a?.id === b?.id}
+          className="h-12 bg-gradient-brand text-white border-0"
+        >
           Compare
         </Button>
       </div>
@@ -86,7 +113,9 @@ function ComparePage() {
             className="card-hover rounded-2xl border border-border bg-card p-5"
           >
             <div className="font-display font-semibold">{c.title}</div>
-            {c.summary && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
+            {c.summary && (
+              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>
+            )}
           </Link>
         ))}
       </div>

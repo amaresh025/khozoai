@@ -12,26 +12,32 @@ export function Footer() {
             <span className="font-display text-base font-semibold tracking-tight">Khozoai</span>
           </Link>
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-            Khozoai — the curated directory of the best AI tools. Discover, compare, and review tools across every workflow.
+            Khozoai — the curated directory of the best AI tools. Discover, compare, and review
+            tools across every workflow.
           </p>
         </div>
-        <FooterCol title="Explore" links={[
-          { to: "/tools", label: "All Tools" },
-          { to: "/categories", label: "Categories" },
-          { to: "/compare", label: "Compare" },
-          { to: "/prompts", label: "Prompts" },
-          { to: "/blog", label: "Blog" },
-        ]} />
-        <FooterCol title="Company" links={[
-          { to: "/about", label: "About" },
-          { to: "/contact", label: "Contact" },
-          { to: "/submit", label: "Submit a Tool" },
-          { to: "/promote", label: "Promote" },
-        ]} />
-        <FooterCol title="Legal" links={[
-          { to: "/privacy", label: "Privacy" },
-          { to: "/terms", label: "Terms" },
-        ]} />
+        <FooterCol
+          title="Explore"
+          links={[
+            { to: "/tools", label: "All Tools" },
+            { to: "/categories", label: "Categories" },
+            { to: "/compare", label: "Compare" },
+          ]}
+        />
+        <FooterCol
+          title="Company"
+          links={[
+            { to: "/about", label: "About" },
+            { to: "/contact", label: "Contact" },
+          ]}
+        />
+        <FooterCol
+          title="Legal"
+          links={[
+            { to: "/privacy", label: "Privacy" },
+            { to: "/terms", label: "Terms" },
+          ]}
+        />
       </div>
       <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} Khozoai. All rights reserved.
@@ -47,7 +53,9 @@ function FooterCol({ title, links }: { title: string; links: { to: string; label
       <ul className="space-y-2">
         {links.map((l) => (
           <li key={l.to}>
-            <Link to={l.to} className="text-sm text-muted-foreground hover:text-foreground">{l.label}</Link>
+            <Link to={l.to} className="text-sm text-muted-foreground hover:text-foreground">
+              {l.label}
+            </Link>
           </li>
         ))}
       </ul>

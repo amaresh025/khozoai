@@ -45,7 +45,10 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      const msg = error instanceof Error ? `${error.message}\n\n${error.stack}\n\nCause: ${error.cause}` : String(error);
+      const msg =
+        error instanceof Error
+          ? `${error.message}\n\n${error.stack}\n\nCause: ${error.cause}`
+          : String(error);
       return new Response(msg, {
         status: 500,
         headers: { "content-type": "text/plain; charset=utf-8" },

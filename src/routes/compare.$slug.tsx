@@ -11,7 +11,10 @@ export const Route = createFileRoute("/compare/$slug")({
     return {
       meta: [
         { title: `${title} — Detailed Comparison | AI Tools Hub` },
-        { name: "description", content: `${title}: features, pricing, ratings, pros and cons. See which one is right for you.` },
+        {
+          name: "description",
+          content: `${title}: features, pricing, ratings, pros and cons. See which one is right for you.`,
+        },
         { property: "og:title", content: `${title} — AI Tools Hub` },
         { property: "og:url", content: `https://khozoai.com/compare/${params.slug}` },
       ],
@@ -22,14 +25,23 @@ export const Route = createFileRoute("/compare/$slug")({
 });
 
 function prettify(s: string) {
-  return s.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+  return s
+    .split("-")
+    .map((w) => w[0]?.toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 function CompareDetail() {
   const { slug } = Route.useParams();
   const [aSlug, bSlug] = slug.split("-vs-");
-  const a = useQuery({ queryKey: ["tool", aSlug], queryFn: async () => (await Q.toolBySlug(aSlug)).data as Tool | null });
-  const b = useQuery({ queryKey: ["tool", bSlug], queryFn: async () => (await Q.toolBySlug(bSlug)).data as Tool | null });
+  const a = useQuery({
+    queryKey: ["tool", aSlug],
+    queryFn: async () => (await Q.toolBySlug(aSlug)).data as Tool | null,
+  });
+  const b = useQuery({
+    queryKey: ["tool", bSlug],
+    queryFn: async () => (await Q.toolBySlug(bSlug)).data as Tool | null,
+  });
 
   useEffect(() => {
     if (a.data?.id && b.data?.id) {
@@ -48,13 +60,14 @@ function CompareDetail() {
     queryFn: async () => (await Q.toolFeatures(b.data!.id)).data ?? [],
   });
 
-  const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await Q.categories()).data ?? [] });
+  const cats = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => (await Q.categories()).data ?? [],
+  });
 
   const getSecondaryCategoryNames = (secIds: string[] | null) => {
     if (!secIds || !secIds.length || !cats.data) return "—";
-    const names = secIds
-      .map((id) => cats.data.find((c) => c.id === id)?.name)
-      .filter(Boolean);
+    const names = secIds.map((id) => cats.data.find((c) => c.id === id)?.name).filter(Boolean);
     return names.length > 0 ? names.join(", ") : "—";
   };
 
@@ -75,10 +88,12 @@ function CompareDetail() {
         val === "Excellent"
           ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
           : val === "Good"
-          ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20"
-          : "bg-muted text-muted-foreground border border-border";
+            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20"
+            : "bg-muted text-muted-foreground border border-border";
       return (
-        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${colorClass}`}>
+        <span
+          className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${colorClass}`}
+        >
           {val}
         </span>
       );
@@ -86,13 +101,17 @@ function CompareDetail() {
     return "—";
   };
 
-  if (a.isLoading || b.isLoading) return <div className="mx-auto max-w-5xl px-4 py-20">Loading…</div>;
-  if (!a.data || !b.data) return (
-    <div className="mx-auto max-w-5xl px-4 py-20 text-center">
-      <h1 className="font-display text-3xl font-bold">Comparison not found</h1>
-      <Link to="/compare" className="mt-4 inline-block text-primary">← Back to compare</Link>
-    </div>
-  );
+  if (a.isLoading || b.isLoading)
+    return <div className="mx-auto max-w-5xl px-4 py-20">Loading…</div>;
+  if (!a.data || !b.data)
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-20 text-center">
+        <h1 className="font-display text-3xl font-bold">Comparison not found</h1>
+        <Link to="/compare" className="mt-4 inline-block text-primary">
+          ← Back to compare
+        </Link>
+      </div>
+    );
 
   const getPricingAvailability = (pricing: string) => {
     return ["free", "freemium"].includes((pricing || "").toLowerCase()) ? "Yes" : "No";
@@ -100,11 +119,15 @@ function CompareDetail() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <Link to="/compare" className="text-sm text-muted-foreground hover:text-foreground">← All comparisons</Link>
+      <Link to="/compare" className="text-sm text-muted-foreground hover:text-foreground">
+        ← All comparisons
+      </Link>
       <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
         {a.data.name} <span className="text-muted-foreground">vs</span> {b.data.name}
       </h1>
-      <p className="mt-2 text-muted-foreground">A side-by-side comparison of features, pricing, and capabilities.</p>
+      <p className="mt-2 text-muted-foreground">
+        A side-by-side comparison of features, pricing, and capabilities.
+      </p>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         <Card tool={a.data} />
@@ -124,13 +147,29 @@ function CompareDetail() {
             <tbody>
               <Row
                 label="Main usecase"
-                a={<p className="text-muted-foreground leading-relaxed text-sm">{a.data.short_description}</p>}
-                b={<p className="text-muted-foreground leading-relaxed text-sm">{b.data.short_description}</p>}
+                a={
+                  <p className="text-muted-foreground leading-relaxed text-sm">
+                    {a.data.short_description}
+                  </p>
+                }
+                b={
+                  <p className="text-muted-foreground leading-relaxed text-sm">
+                    {b.data.short_description}
+                  </p>
+                }
               />
               <Row
                 label="Key Summary"
-                a={<p className="text-muted-foreground leading-relaxed text-sm">{a.data.key_summary || "—"}</p>}
-                b={<p className="text-muted-foreground leading-relaxed text-sm">{b.data.key_summary || "—"}</p>}
+                a={
+                  <p className="text-muted-foreground leading-relaxed text-sm">
+                    {a.data.key_summary || "—"}
+                  </p>
+                }
+                b={
+                  <p className="text-muted-foreground leading-relaxed text-sm">
+                    {b.data.key_summary || "—"}
+                  </p>
+                }
               />
               <Row
                 label="Primary Category"
@@ -148,7 +187,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {a.data.use_cases && a.data.use_cases.length > 0
                       ? a.data.use_cases.map((uc) => (
-                          <span key={uc} className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium">
+                          <span
+                            key={uc}
+                            className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium"
+                          >
                             {uc}
                           </span>
                         ))
@@ -159,7 +201,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {b.data.use_cases && b.data.use_cases.length > 0
                       ? b.data.use_cases.map((uc) => (
-                          <span key={uc} className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium">
+                          <span
+                            key={uc}
+                            className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium"
+                          >
                             {uc}
                           </span>
                         ))
@@ -173,7 +218,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {a.data.capabilities && a.data.capabilities.length > 0
                       ? a.data.capabilities.map((cap) => (
-                          <span key={cap} className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
+                          <span
+                            key={cap}
+                            className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium"
+                          >
                             {cap}
                           </span>
                         ))
@@ -184,7 +232,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {b.data.capabilities && b.data.capabilities.length > 0
                       ? b.data.capabilities.map((cap) => (
-                          <span key={cap} className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
+                          <span
+                            key={cap}
+                            className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium"
+                          >
                             {cap}
                           </span>
                         ))
@@ -198,7 +249,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {a.data.industries && a.data.industries.length > 0
                       ? a.data.industries.map((ind) => (
-                          <span key={ind} className="rounded bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 font-medium">
+                          <span
+                            key={ind}
+                            className="rounded bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 font-medium"
+                          >
                             {ind}
                           </span>
                         ))
@@ -209,7 +263,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {b.data.industries && b.data.industries.length > 0
                       ? b.data.industries.map((ind) => (
-                          <span key={ind} className="rounded bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 font-medium">
+                          <span
+                            key={ind}
+                            className="rounded bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 font-medium"
+                          >
                             {ind}
                           </span>
                         ))
@@ -285,7 +342,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {a.data.platforms && a.data.platforms.length > 0
                       ? a.data.platforms.map((p) => (
-                          <span key={p} className="rounded border border-border bg-surface px-2 py-0.5 text-xs">
+                          <span
+                            key={p}
+                            className="rounded border border-border bg-surface px-2 py-0.5 text-xs"
+                          >
                             {p}
                           </span>
                         ))
@@ -296,7 +356,10 @@ function CompareDetail() {
                   <div className="flex flex-wrap gap-1">
                     {b.data.platforms && b.data.platforms.length > 0
                       ? b.data.platforms.map((p) => (
-                          <span key={p} className="rounded border border-border bg-surface px-2 py-0.5 text-xs">
+                          <span
+                            key={p}
+                            className="rounded border border-border bg-surface px-2 py-0.5 text-xs"
+                          >
                             {p}
                           </span>
                         ))
@@ -308,17 +371,25 @@ function CompareDetail() {
                 label="Pricing"
                 a={
                   <div>
-                    <span className="capitalize font-semibold text-foreground">{a.data.pricing}</span>
+                    <span className="capitalize font-semibold text-foreground">
+                      {a.data.pricing}
+                    </span>
                     {a.data.pricing_details && (
-                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{a.data.pricing_details}</p>
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                        {a.data.pricing_details}
+                      </p>
                     )}
                   </div>
                 }
                 b={
                   <div>
-                    <span className="capitalize font-semibold text-foreground">{b.data.pricing}</span>
+                    <span className="capitalize font-semibold text-foreground">
+                      {b.data.pricing}
+                    </span>
                     {b.data.pricing_details && (
-                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{b.data.pricing_details}</p>
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                        {b.data.pricing_details}
+                      </p>
                     )}
                   </div>
                 }
@@ -504,9 +575,17 @@ function Card({ tool }: { tool: Tool }) {
       <div className="flex items-start gap-3">
         <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-surface">
           {tool.logo_url ? (
-            <img src={tool.logo_url} alt="" className="h-full w-full object-contain"
-              onError={(e) => (e.currentTarget.style.display = "none")} />
-          ) : <span className="font-display text-xl font-bold text-foreground/60">{tool.name[0]}</span>}
+            <img
+              src={tool.logo_url}
+              alt=""
+              className="h-full w-full object-contain"
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+          ) : (
+            <span className="font-display text-xl font-bold text-foreground/60">
+              {tool.name[0]}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1.5 font-display text-lg font-bold tracking-tight">
@@ -529,8 +608,19 @@ function Card({ tool }: { tool: Tool }) {
       </div>
       <p className="mt-3 text-sm text-muted-foreground">{tool.short_description}</p>
       <div className="mt-4 flex gap-3 text-sm">
-        <Link to="/tools/$slug" params={{ slug: tool.slug }} className="font-medium text-primary hover:underline">View details</Link>
-        <a href={tool.website_url} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground">
+        <Link
+          to="/tools/$slug"
+          params={{ slug: tool.slug }}
+          className="font-medium text-primary hover:underline"
+        >
+          View details
+        </Link>
+        <a
+          href={tool.website_url}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
+        >
           Visit <ExternalLink className="h-3 w-3" />
         </a>
       </div>
@@ -538,12 +628,30 @@ function Card({ tool }: { tool: Tool }) {
   );
 }
 
-function Row({ label, a, b, highlight }: { label: string; a: React.ReactNode; b: React.ReactNode; highlight?: "a" | "b" | null }) {
+function Row({
+  label,
+  a,
+  b,
+  highlight,
+}: {
+  label: string;
+  a: React.ReactNode;
+  b: React.ReactNode;
+  highlight?: "a" | "b" | null;
+}) {
   return (
     <tr className="border-t border-border">
       <td className="px-5 py-4 text-muted-foreground align-top font-medium w-1/4">{label}</td>
-      <td className={`px-5 py-4 align-top font-medium ${highlight === "a" ? "text-primary font-semibold" : ""}`}>{a}</td>
-      <td className={`px-5 py-4 align-top font-medium ${highlight === "b" ? "text-primary font-semibold" : ""}`}>{b}</td>
+      <td
+        className={`px-5 py-4 align-top font-medium ${highlight === "a" ? "text-primary font-semibold" : ""}`}
+      >
+        {a}
+      </td>
+      <td
+        className={`px-5 py-4 align-top font-medium ${highlight === "b" ? "text-primary font-semibold" : ""}`}
+      >
+        {b}
+      </td>
     </tr>
   );
 }

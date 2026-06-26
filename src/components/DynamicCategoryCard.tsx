@@ -107,7 +107,11 @@ export function TagBadge({
   const className = `inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors ${variantClasses[variant]}`;
 
   if (href) {
-    return <a href={href} className={className}>{label}</a>;
+    return (
+      <a href={href} className={className}>
+        {label}
+      </a>
+    );
   }
   return <span className={className}>{label}</span>;
 }

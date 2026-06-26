@@ -49,10 +49,24 @@ type FormState = {
 };
 
 const empty: FormState = {
-  name: "", slug: "", short_description: "", full_description: "", website_url: "",
-  affiliate_url: "", logo_url: "", cover_url: "", pricing: "freemium", pricing_details: "",
-  category_id: "", status: "approved", featured: false, verified: false, sponsored: false,
-  pros: "", cons: "", platforms: "",
+  name: "",
+  slug: "",
+  short_description: "",
+  full_description: "",
+  website_url: "",
+  affiliate_url: "",
+  logo_url: "",
+  cover_url: "",
+  pricing: "freemium",
+  pricing_details: "",
+  category_id: "",
+  status: "approved",
+  featured: false,
+  verified: false,
+  sponsored: false,
+  pros: "",
+  cons: "",
+  platforms: "",
   key_summary: "",
   secondary_categories: [],
   use_cases: [],
@@ -69,25 +83,44 @@ const empty: FormState = {
     voice: false,
     web_search: false,
     file_upload: false,
-    api: false
+    api: false,
   },
-  needs_review: false
+  needs_review: false,
 };
 
 function slugify(s: string) {
-  return s.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 80);
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80);
 }
 
-export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null; onClose: () => void; onSaved: () => void }) {
+export function ToolEditor({
+  toolId,
+  onClose,
+  onSaved,
+}: {
+  toolId: string | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const isNew = toolId === null;
   const [form, setForm] = useState<FormState>(empty);
   const [regenerating, setRegenerating] = useState(false);
 
-  const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await supabase.from("categories").select("id,name").order("name")).data ?? [] });
+  const cats = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () =>
+      (await supabase.from("categories").select("id,name").order("name")).data ?? [],
+  });
   const existing = useQuery({
     enabled: !isNew,
     queryKey: ["admin", "tool", toolId],
-    queryFn: async () => (await supabase.from("tools").select("*").eq("id", toolId!).maybeSingle()).data,
+    queryFn: async () =>
+      (await supabase.from("tools").select("*").eq("id", toolId!).maybeSingle()).data,
   });
 
   const enrichFn = useServerFn(enrichUrl);
@@ -132,7 +165,7 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
           file_upload: !!t.compare_data?.file_upload,
           api: !!t.compare_data?.api,
         },
-        needs_review: !!t.needs_review
+        needs_review: !!t.needs_review,
       });
     }
   }, [existing.data]);
@@ -173,7 +206,7 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
             file_upload: !!e.compare_data?.file_upload,
             api: !!e.compare_data?.api,
           },
-          needs_review: false
+          needs_review: false,
         }));
         toast.success("AI Enrichment finished! Form fields populated.");
       } else {
@@ -205,16 +238,31 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
         featured: form.featured,
         verified: form.verified,
         sponsored: form.sponsored,
-        pros: form.pros.split("\n").map((s) => s.trim()).filter(Boolean),
-        cons: form.cons.split("\n").map((s) => s.trim()).filter(Boolean),
-        platforms: form.platforms.split(",").map((s) => s.trim()).filter(Boolean),
+        pros: form.pros
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        cons: form.cons
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        platforms: form.platforms
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
         key_summary: form.key_summary || null,
         secondary_categories: form.secondary_categories,
         use_cases: form.use_cases,
         capabilities: form.capabilities,
         industries: form.industries,
-        best_for: form.best_for.split("\n").map((s) => s.trim()).filter(Boolean),
-        not_good_for: form.not_good_for.split("\n").map((s) => s.trim()).filter(Boolean),
+        best_for: form.best_for
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        not_good_for: form.not_good_for
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
         compare_data: form.compare_data,
         needs_review: false,
       } as any;
@@ -226,33 +274,52 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
         if (error) throw error;
       }
     },
-    onSuccess: () => { toast.success(isNew ? "Tool created" : "Tool updated"); onSaved(); },
+    onSuccess: () => {
+      toast.success(isNew ? "Tool created" : "Tool updated");
+      onSaved();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/40 p-4 sm:p-8 overflow-y-auto" onClick={onClose}>
-      <div className="w-full max-w-3xl rounded-xl border border-border bg-background shadow-card-lg my-8" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/40 p-4 sm:p-8 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-3xl rounded-xl border border-border bg-background shadow-card-lg my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="font-display text-xl font-bold tracking-tight">{isNew ? "New tool" : "Edit tool"}</h2>
-          <button onClick={onClose} className="rounded-md p-1 hover:bg-surface"><X className="h-4 w-4" /></button>
+          <h2 className="font-display text-xl font-bold tracking-tight">
+            {isNew ? "New tool" : "Edit tool"}
+          </h2>
+          <button onClick={onClose} className="rounded-md p-1 hover:bg-surface">
+            <X className="h-4 w-4" />
+          </button>
         </div>
         <form
-          onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            save.mutate();
+          }}
           className="space-y-5 px-6 py-5 max-h-[75vh] overflow-y-auto"
         >
           {form.needs_review && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700 dark:text-amber-400 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-                <span><strong>Needs Review:</strong> AI enrichment failed. Please verify descriptions, categories, capabilities, and pricing below.</span>
+                <span>
+                  <strong>Needs Review:</strong> AI enrichment failed. Please verify descriptions,
+                  categories, capabilities, and pricing below.
+                </span>
               </div>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 className="border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs shrink-0"
-                onClick={() => setForm(prev => ({ ...prev, needs_review: false }))}
+                onClick={() => setForm((prev) => ({ ...prev, needs_review: false }))}
               >
                 Accept as reviewed
               </Button>
@@ -261,80 +328,162 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Name *">
-              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: form.slug || slugify(e.target.value) })} className="input" />
+              <input
+                required
+                value={form.name}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    name: e.target.value,
+                    slug: form.slug || slugify(e.target.value),
+                  })
+                }
+                className="input"
+              />
             </Field>
             <Field label="Slug">
-              <input value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} className="input" />
+              <input
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })}
+                className="input"
+              />
             </Field>
           </div>
           <Field label="Website URL *">
-            <input required type="url" value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} className="input" />
+            <input
+              required
+              type="url"
+              value={form.website_url}
+              onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+              className="input"
+            />
           </Field>
           <Field label="Affiliate URL">
-            <input type="url" value={form.affiliate_url} onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })} className="input" />
+            <input
+              type="url"
+              value={form.affiliate_url}
+              onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })}
+              className="input"
+            />
           </Field>
           <Field label="Short description">
-            <input maxLength={200} value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value })} className="input" />
+            <input
+              maxLength={200}
+              value={form.short_description}
+              onChange={(e) => setForm({ ...form, short_description: e.target.value })}
+              className="input"
+            />
           </Field>
           <Field label="Full description">
-            <textarea rows={4} value={form.full_description} onChange={(e) => setForm({ ...form, full_description: e.target.value })} className="input min-h-[100px]" />
+            <textarea
+              rows={4}
+              value={form.full_description}
+              onChange={(e) => setForm({ ...form, full_description: e.target.value })}
+              className="input min-h-[100px]"
+            />
           </Field>
           <Field label="Key Summary">
-            <textarea rows={2} value={form.key_summary} onChange={(e) => setForm({ ...form, key_summary: e.target.value })} className="input min-h-[60px]" />
+            <textarea
+              rows={2}
+              value={form.key_summary}
+              onChange={(e) => setForm({ ...form, key_summary: e.target.value })}
+              className="input min-h-[60px]"
+            />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Logo URL">
-              <input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} className="input" />
+              <input
+                value={form.logo_url}
+                onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                className="input"
+              />
             </Field>
             <Field label="Cover URL">
-              <input value={form.cover_url} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} className="input" />
+              <input
+                value={form.cover_url}
+                onChange={(e) => setForm({ ...form, cover_url: e.target.value })}
+                className="input"
+              />
             </Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Primary Category">
-              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="input">
+              <select
+                value={form.category_id}
+                onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                className="input"
+              >
                 <option value="">— None —</option>
-                {cats.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {cats.data?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Pricing">
-              <select value={form.pricing} onChange={(e) => setForm({ ...form, pricing: e.target.value })} className="input">
-                {["free","freemium","paid","subscription","one_time","contact"].map((p) => <option key={p} value={p}>{p}</option>)}
+              <select
+                value={form.pricing}
+                onChange={(e) => setForm({ ...form, pricing: e.target.value })}
+                className="input"
+              >
+                {["free", "freemium", "paid", "subscription", "one_time", "contact"].map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Status">
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input">
-                {["draft","pending","approved","rejected"].map((s) => <option key={s} value={s}>{s}</option>)}
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="input"
+              >
+                {["draft", "pending", "approved", "rejected"].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
           <Field label="Pricing details">
-            <input value={form.pricing_details} onChange={(e) => setForm({ ...form, pricing_details: e.target.value })} className="input" />
+            <input
+              value={form.pricing_details}
+              onChange={(e) => setForm({ ...form, pricing_details: e.target.value })}
+              className="input"
+            />
           </Field>
 
           <Field label="Secondary Categories">
             <div className="grid grid-cols-2 gap-2 mt-1.5 p-3 rounded-lg border border-border bg-background/50 max-h-40 overflow-y-auto">
-              {cats.data?.filter(c => c.id !== form.category_id).map((c) => {
-                const isChecked = form.secondary_categories.includes(c.id);
-                return (
-                  <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {
-                        setForm({
-                          ...form,
-                          secondary_categories: isChecked
-                            ? form.secondary_categories.filter((x) => x !== c.id)
-                            : [...form.secondary_categories, c.id]
-                        });
-                      }}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    {c.name}
-                  </label>
-                );
-              })}
+              {cats.data
+                ?.filter((c) => c.id !== form.category_id)
+                .map((c) => {
+                  const isChecked = form.secondary_categories.includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setForm({
+                            ...form,
+                            secondary_categories: isChecked
+                              ? form.secondary_categories.filter((x) => x !== c.id)
+                              : [...form.secondary_categories, c.id],
+                          });
+                        }}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      {c.name}
+                    </label>
+                  );
+                })}
             </div>
           </Field>
 
@@ -343,7 +492,10 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
               {USE_CASE_TAXONOMY.map((uc) => {
                 const isChecked = form.use_cases.includes(uc);
                 return (
-                  <label key={uc} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <label
+                    key={uc}
+                    className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                  >
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -352,7 +504,7 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
                           ...form,
                           use_cases: isChecked
                             ? form.use_cases.filter((x) => x !== uc)
-                            : [...form.use_cases, uc]
+                            : [...form.use_cases, uc],
                         });
                       }}
                       className="h-4 w-4 rounded border-border"
@@ -369,7 +521,10 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
               {CAPABILITY_TAXONOMY.map((cap) => {
                 const isChecked = form.capabilities.includes(cap);
                 return (
-                  <label key={cap} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <label
+                    key={cap}
+                    className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                  >
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -378,7 +533,7 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
                           ...form,
                           capabilities: isChecked
                             ? form.capabilities.filter((x) => x !== cap)
-                            : [...form.capabilities, cap]
+                            : [...form.capabilities, cap],
                         });
                       }}
                       className="h-4 w-4 rounded border-border"
@@ -395,7 +550,10 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
               {INDUSTRY_TAXONOMY.map((ind) => {
                 const isChecked = form.industries.includes(ind);
                 return (
-                  <label key={ind} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <label
+                    key={ind}
+                    className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                  >
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -404,7 +562,7 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
                           ...form,
                           industries: isChecked
                             ? form.industries.filter((x) => x !== ind)
-                            : [...form.industries, ind]
+                            : [...form.industries, ind],
                         });
                       }}
                       className="h-4 w-4 rounded border-border"
@@ -437,34 +595,63 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
           </Field>
 
           <div className="rounded-xl border border-border bg-surface/50 p-4 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Structured Capability Metrics (Compare Page)</h3>
-            
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Structured Capability Metrics (Compare Page)
+            </h3>
+
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Coding Quality">
                 <select
                   value={form.compare_data.coding_quality}
-                  onChange={(e) => setForm({ ...form, compare_data: { ...form.compare_data, coding_quality: e.target.value } })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      compare_data: { ...form.compare_data, coding_quality: e.target.value },
+                    })
+                  }
                   className="input"
                 >
-                  {["Excellent", "Good", "Basic"].map((lvl) => <option key={lvl} value={lvl}>{lvl}</option>)}
+                  {["Excellent", "Good", "Basic"].map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Writing Quality">
                 <select
                   value={form.compare_data.writing_quality}
-                  onChange={(e) => setForm({ ...form, compare_data: { ...form.compare_data, writing_quality: e.target.value } })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      compare_data: { ...form.compare_data, writing_quality: e.target.value },
+                    })
+                  }
                   className="input"
                 >
-                  {["Excellent", "Good", "Basic"].map((lvl) => <option key={lvl} value={lvl}>{lvl}</option>)}
+                  {["Excellent", "Good", "Basic"].map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Research Capability">
                 <select
                   value={form.compare_data.research}
-                  onChange={(e) => setForm({ ...form, compare_data: { ...form.compare_data, research: e.target.value } })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      compare_data: { ...form.compare_data, research: e.target.value },
+                    })
+                  }
                   className="input"
                 >
-                  {["Excellent", "Good", "Basic"].map((lvl) => <option key={lvl} value={lvl}>{lvl}</option>)}
+                  {["Excellent", "Good", "Basic"].map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>
@@ -473,60 +660,110 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
               <Toggle
                 label="Image Generation"
                 checked={form.compare_data.image_generation}
-                onChange={(v) => setForm({ ...form, compare_data: { ...form.compare_data, image_generation: v } })}
+                onChange={(v) =>
+                  setForm({ ...form, compare_data: { ...form.compare_data, image_generation: v } })
+                }
               />
               <Toggle
                 label="Video Generation"
                 checked={form.compare_data.video_generation}
-                onChange={(v) => setForm({ ...form, compare_data: { ...form.compare_data, video_generation: v } })}
+                onChange={(v) =>
+                  setForm({ ...form, compare_data: { ...form.compare_data, video_generation: v } })
+                }
               />
               <Toggle
                 label="Voice / Audio"
                 checked={form.compare_data.voice}
-                onChange={(v) => setForm({ ...form, compare_data: { ...form.compare_data, voice: v } })}
+                onChange={(v) =>
+                  setForm({ ...form, compare_data: { ...form.compare_data, voice: v } })
+                }
               />
               <Toggle
                 label="Web Search"
                 checked={form.compare_data.web_search}
-                onChange={(v) => setForm({ ...form, compare_data: { ...form.compare_data, web_search: v } })}
+                onChange={(v) =>
+                  setForm({ ...form, compare_data: { ...form.compare_data, web_search: v } })
+                }
               />
               <Toggle
                 label="File Uploads"
                 checked={form.compare_data.file_upload}
-                onChange={(v) => setForm({ ...form, compare_data: { ...form.compare_data, file_upload: v } })}
+                onChange={(v) =>
+                  setForm({ ...form, compare_data: { ...form.compare_data, file_upload: v } })
+                }
               />
               <Toggle
                 label="API Access"
                 checked={form.compare_data.api}
-                onChange={(v) => setForm({ ...form, compare_data: { ...form.compare_data, api: v } })}
+                onChange={(v) =>
+                  setForm({ ...form, compare_data: { ...form.compare_data, api: v } })
+                }
               />
             </div>
           </div>
 
           <Field label="Platforms (comma separated)">
-            <input value={form.platforms} onChange={(e) => setForm({ ...form, platforms: e.target.value })} placeholder="Web, iOS, Android, API Available" className="input" />
+            <input
+              value={form.platforms}
+              onChange={(e) => setForm({ ...form, platforms: e.target.value })}
+              placeholder="Web, iOS, Android, API Available"
+              className="input"
+            />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Strengths (one per line)">
-              <textarea rows={4} value={form.pros} onChange={(e) => setForm({ ...form, pros: e.target.value })} className="input" />
+              <textarea
+                rows={4}
+                value={form.pros}
+                onChange={(e) => setForm({ ...form, pros: e.target.value })}
+                className="input"
+              />
             </Field>
             <Field label="Limitations (one per line)">
-              <textarea rows={4} value={form.cons} onChange={(e) => setForm({ ...form, cons: e.target.value })} className="input" />
+              <textarea
+                rows={4}
+                value={form.cons}
+                onChange={(e) => setForm({ ...form, cons: e.target.value })}
+                className="input"
+              />
             </Field>
           </div>
           <div className="flex flex-wrap gap-4">
-            <Toggle label="Featured" checked={form.featured} onChange={(v) => setForm({ ...form, featured: v })} />
-            <Toggle label="Verified" checked={form.verified} onChange={(v) => setForm({ ...form, verified: v })} />
-            <Toggle label="Sponsored" checked={form.sponsored} onChange={(v) => setForm({ ...form, sponsored: v })} />
+            <Toggle
+              label="Featured"
+              checked={form.featured}
+              onChange={(v) => setForm({ ...form, featured: v })}
+            />
+            <Toggle
+              label="Verified"
+              checked={form.verified}
+              onChange={(v) => setForm({ ...form, verified: v })}
+            />
+            <Toggle
+              label="Sponsored"
+              checked={form.sponsored}
+              onChange={(v) => setForm({ ...form, sponsored: v })}
+            />
           </div>
 
           <div className="sticky bottom-0 -mx-6 -mb-5 flex justify-between gap-2 border-t border-border bg-background px-6 py-3 z-10">
-            <Button type="button" variant="outline" onClick={handleRegenerate} disabled={regenerating || !form.website_url}>
-              {regenerating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleRegenerate}
+              disabled={regenerating || !form.website_url}
+            >
+              {regenerating ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-1 h-4 w-4" />
+              )}
               Regenerate with AI
             </Button>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={save.isPending}>
                 {save.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
                 {isNew ? "Create tool" : "Save changes"}
@@ -543,16 +780,31 @@ export function ToolEditor({ toolId, onClose, onSaved }: { toolId: string | null
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <label className="inline-flex cursor-pointer items-center gap-2 text-sm select-none">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 rounded border-border" />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4 rounded border-border"
+      />
       {label}
     </label>
   );

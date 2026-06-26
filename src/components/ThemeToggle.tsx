@@ -28,7 +28,11 @@ export function ThemeToggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     applyTheme(next);
-    try { localStorage.setItem("khozoai-theme", next); } catch { /* ignore */ }
+    try {
+      localStorage.setItem("khozoai-theme", next);
+    } catch {
+      /* ignore */
+    }
   }
 
   return (

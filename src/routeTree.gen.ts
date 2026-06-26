@@ -12,35 +12,24 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
-import { Route as PromoteRouteImport } from './routes/promote'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CategoriesRouteImport } from './routes/categories'
-import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ToolsIndexRouteImport } from './routes/tools.index'
-import { Route as PromptsIndexRouteImport } from './routes/prompts.index'
 import { Route as CompareIndexRouteImport } from './routes/compare.index'
-import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as UseCaseSlugRouteImport } from './routes/use-case.$slug'
 import { Route as ToolsSlugRouteImport } from './routes/tools.$slug'
-import { Route as PromptsSlugRouteImport } from './routes/prompts.$slug'
 import { Route as IndustrySlugRouteImport } from './routes/industry.$slug'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AuthenticatedSubmitRouteImport } from './routes/_authenticated/submit'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as AuthenticatedAdminToolsRouteImport } from './routes/_authenticated/admin.tools'
-import { Route as AuthenticatedAdminQualityRouteImport } from './routes/_authenticated/admin.quality'
-import { Route as AuthenticatedAdminImportRouteImport } from './routes/_authenticated/admin.import'
-import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
-import { Route as AuthenticatedAdminBlogIndexRouteImport } from './routes/_authenticated/admin.blog.index'
-import { Route as AuthenticatedAdminBlogIdRouteImport } from './routes/_authenticated/admin.blog.$id'
+import { Route as AdminToolsRouteImport } from './routes/admin.tools'
+import { Route as AdminQualityRouteImport } from './routes/admin.quality'
+import { Route as AdminImportRouteImport } from './routes/admin.import'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -55,11 +44,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PromoteRoute = PromoteRouteImport.update({
-  id: '/promote',
-  path: '/promote',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -77,18 +61,14 @@ const CategoriesRoute = CategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -101,20 +81,15 @@ const ToolsIndexRoute = ToolsIndexRouteImport.update({
   path: '/tools/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PromptsIndexRoute = PromptsIndexRouteImport.update({
-  id: '/prompts/',
-  path: '/prompts/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CompareIndexRoute = CompareIndexRouteImport.update({
   id: '/compare/',
   path: '/compare/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogIndexRoute = BlogIndexRouteImport.update({
-  id: '/blog/',
-  path: '/blog/',
-  getParentRoute: () => rootRouteImport,
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const UseCaseSlugRoute = UseCaseSlugRouteImport.update({
   id: '/use-case/$slug',
@@ -124,11 +99,6 @@ const UseCaseSlugRoute = UseCaseSlugRouteImport.update({
 const ToolsSlugRoute = ToolsSlugRouteImport.update({
   id: '/tools/$slug',
   path: '/tools/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PromptsSlugRoute = PromptsSlugRouteImport.update({
-  id: '/prompts/$slug',
-  path: '/prompts/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndustrySlugRoute = IndustrySlugRouteImport.update({
@@ -146,291 +116,183 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/blog/$slug',
-  path: '/blog/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSubmitRoute = AuthenticatedSubmitRouteImport.update({
-  id: '/submit',
-  path: '/submit',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminToolsRoute = AuthenticatedAdminToolsRouteImport.update({
+const AdminToolsRoute = AdminToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
-  getParentRoute: () => AuthenticatedAdminRoute,
+  getParentRoute: () => AdminRoute,
 } as any)
-const AuthenticatedAdminQualityRoute =
-  AuthenticatedAdminQualityRouteImport.update({
-    id: '/quality',
-    path: '/quality',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminImportRoute =
-  AuthenticatedAdminImportRouteImport.update({
-    id: '/import',
-    path: '/import',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminAnalyticsRoute =
-  AuthenticatedAdminAnalyticsRouteImport.update({
-    id: '/analytics',
-    path: '/analytics',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminBlogIndexRoute =
-  AuthenticatedAdminBlogIndexRouteImport.update({
-    id: '/blog/',
-    path: '/blog/',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminBlogIdRoute =
-  AuthenticatedAdminBlogIdRouteImport.update({
-    id: '/blog/$id',
-    path: '/blog/$id',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
+const AdminQualityRoute = AdminQualityRouteImport.update({
+  id: '/quality',
+  path: '/quality',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminImportRoute = AdminImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/auth': typeof AuthRoute
+  '/admin': typeof AdminRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
-  '/promote': typeof PromoteRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/submit': typeof AuthenticatedSubmitRoute
-  '/blog/$slug': typeof BlogSlugRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/import': typeof AdminImportRoute
+  '/admin/quality': typeof AdminQualityRoute
+  '/admin/tools': typeof AdminToolsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/industry/$slug': typeof IndustrySlugRoute
-  '/prompts/$slug': typeof PromptsSlugRoute
   '/tools/$slug': typeof ToolsSlugRoute
   '/use-case/$slug': typeof UseCaseSlugRoute
-  '/blog/': typeof BlogIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/compare/': typeof CompareIndexRoute
-  '/prompts/': typeof PromptsIndexRoute
   '/tools/': typeof ToolsIndexRoute
-  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
-  '/admin/import': typeof AuthenticatedAdminImportRoute
-  '/admin/quality': typeof AuthenticatedAdminQualityRoute
-  '/admin/tools': typeof AuthenticatedAdminToolsRoute
-  '/admin/': typeof AuthenticatedAdminIndexRoute
-  '/admin/blog/$id': typeof AuthenticatedAdminBlogIdRoute
-  '/admin/blog/': typeof AuthenticatedAdminBlogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/auth': typeof AuthRoute
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
-  '/promote': typeof PromoteRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/submit': typeof AuthenticatedSubmitRoute
-  '/blog/$slug': typeof BlogSlugRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/import': typeof AdminImportRoute
+  '/admin/quality': typeof AdminQualityRoute
+  '/admin/tools': typeof AdminToolsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/industry/$slug': typeof IndustrySlugRoute
-  '/prompts/$slug': typeof PromptsSlugRoute
   '/tools/$slug': typeof ToolsSlugRoute
   '/use-case/$slug': typeof UseCaseSlugRoute
-  '/blog': typeof BlogIndexRoute
+  '/admin': typeof AdminIndexRoute
   '/compare': typeof CompareIndexRoute
-  '/prompts': typeof PromptsIndexRoute
   '/tools': typeof ToolsIndexRoute
-  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
-  '/admin/import': typeof AuthenticatedAdminImportRoute
-  '/admin/quality': typeof AuthenticatedAdminQualityRoute
-  '/admin/tools': typeof AuthenticatedAdminToolsRoute
-  '/admin': typeof AuthenticatedAdminIndexRoute
-  '/admin/blog/$id': typeof AuthenticatedAdminBlogIdRoute
-  '/admin/blog': typeof AuthenticatedAdminBlogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
-  '/auth': typeof AuthRoute
+  '/admin': typeof AdminRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
-  '/promote': typeof PromoteRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/submit': typeof AuthenticatedSubmitRoute
-  '/blog/$slug': typeof BlogSlugRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/import': typeof AdminImportRoute
+  '/admin/quality': typeof AdminQualityRoute
+  '/admin/tools': typeof AdminToolsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/industry/$slug': typeof IndustrySlugRoute
-  '/prompts/$slug': typeof PromptsSlugRoute
   '/tools/$slug': typeof ToolsSlugRoute
   '/use-case/$slug': typeof UseCaseSlugRoute
-  '/blog/': typeof BlogIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/compare/': typeof CompareIndexRoute
-  '/prompts/': typeof PromptsIndexRoute
   '/tools/': typeof ToolsIndexRoute
-  '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
-  '/_authenticated/admin/import': typeof AuthenticatedAdminImportRoute
-  '/_authenticated/admin/quality': typeof AuthenticatedAdminQualityRoute
-  '/_authenticated/admin/tools': typeof AuthenticatedAdminToolsRoute
-  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
-  '/_authenticated/admin/blog/$id': typeof AuthenticatedAdminBlogIdRoute
-  '/_authenticated/admin/blog/': typeof AuthenticatedAdminBlogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
-    | '/auth'
+    | '/admin'
     | '/categories'
     | '/contact'
     | '/privacy'
-    | '/promote'
     | '/search'
     | '/sitemap.xml'
     | '/terms'
-    | '/admin'
-    | '/dashboard'
-    | '/submit'
-    | '/blog/$slug'
-    | '/category/$slug'
-    | '/compare/$slug'
-    | '/industry/$slug'
-    | '/prompts/$slug'
-    | '/tools/$slug'
-    | '/use-case/$slug'
-    | '/blog/'
-    | '/compare/'
-    | '/prompts/'
-    | '/tools/'
     | '/admin/analytics'
     | '/admin/import'
     | '/admin/quality'
     | '/admin/tools'
+    | '/category/$slug'
+    | '/compare/$slug'
+    | '/industry/$slug'
+    | '/tools/$slug'
+    | '/use-case/$slug'
     | '/admin/'
-    | '/admin/blog/$id'
-    | '/admin/blog/'
+    | '/compare/'
+    | '/tools/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/auth'
     | '/categories'
     | '/contact'
     | '/privacy'
-    | '/promote'
     | '/search'
     | '/sitemap.xml'
     | '/terms'
-    | '/dashboard'
-    | '/submit'
-    | '/blog/$slug'
-    | '/category/$slug'
-    | '/compare/$slug'
-    | '/industry/$slug'
-    | '/prompts/$slug'
-    | '/tools/$slug'
-    | '/use-case/$slug'
-    | '/blog'
-    | '/compare'
-    | '/prompts'
-    | '/tools'
     | '/admin/analytics'
     | '/admin/import'
     | '/admin/quality'
     | '/admin/tools'
-    | '/admin'
-    | '/admin/blog/$id'
-    | '/admin/blog'
-  id:
-    | '__root__'
-    | '/'
-    | '/_authenticated'
-    | '/about'
-    | '/auth'
-    | '/categories'
-    | '/contact'
-    | '/privacy'
-    | '/promote'
-    | '/search'
-    | '/sitemap.xml'
-    | '/terms'
-    | '/_authenticated/admin'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/submit'
-    | '/blog/$slug'
     | '/category/$slug'
     | '/compare/$slug'
     | '/industry/$slug'
-    | '/prompts/$slug'
     | '/tools/$slug'
     | '/use-case/$slug'
-    | '/blog/'
+    | '/admin'
+    | '/compare'
+    | '/tools'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/categories'
+    | '/contact'
+    | '/privacy'
+    | '/search'
+    | '/sitemap.xml'
+    | '/terms'
+    | '/admin/analytics'
+    | '/admin/import'
+    | '/admin/quality'
+    | '/admin/tools'
+    | '/category/$slug'
+    | '/compare/$slug'
+    | '/industry/$slug'
+    | '/tools/$slug'
+    | '/use-case/$slug'
+    | '/admin/'
     | '/compare/'
-    | '/prompts/'
     | '/tools/'
-    | '/_authenticated/admin/analytics'
-    | '/_authenticated/admin/import'
-    | '/_authenticated/admin/quality'
-    | '/_authenticated/admin/tools'
-    | '/_authenticated/admin/'
-    | '/_authenticated/admin/blog/$id'
-    | '/_authenticated/admin/blog/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
-  AuthRoute: typeof AuthRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CategoriesRoute: typeof CategoriesRoute
   ContactRoute: typeof ContactRoute
   PrivacyRoute: typeof PrivacyRoute
-  PromoteRoute: typeof PromoteRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
-  BlogSlugRoute: typeof BlogSlugRoute
   CategorySlugRoute: typeof CategorySlugRoute
   CompareSlugRoute: typeof CompareSlugRoute
   IndustrySlugRoute: typeof IndustrySlugRoute
-  PromptsSlugRoute: typeof PromptsSlugRoute
   ToolsSlugRoute: typeof ToolsSlugRoute
   UseCaseSlugRoute: typeof UseCaseSlugRoute
-  BlogIndexRoute: typeof BlogIndexRoute
   CompareIndexRoute: typeof CompareIndexRoute
-  PromptsIndexRoute: typeof PromptsIndexRoute
   ToolsIndexRoute: typeof ToolsIndexRoute
 }
 
@@ -457,13 +319,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/promote': {
-      id: '/promote'
-      path: '/promote'
-      fullPath: '/promote'
-      preLoaderRoute: typeof PromoteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -485,11 +340,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -497,13 +352,6 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -520,13 +368,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ToolsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/prompts/': {
-      id: '/prompts/'
-      path: '/prompts'
-      fullPath: '/prompts/'
-      preLoaderRoute: typeof PromptsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/compare/': {
       id: '/compare/'
       path: '/compare'
@@ -534,12 +375,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompareIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog/': {
-      id: '/blog/'
-      path: '/blog'
-      fullPath: '/blog/'
-      preLoaderRoute: typeof BlogIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/use-case/$slug': {
       id: '/use-case/$slug'
@@ -553,13 +394,6 @@ declare module '@tanstack/react-router' {
       path: '/tools/$slug'
       fullPath: '/tools/$slug'
       preLoaderRoute: typeof ToolsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prompts/$slug': {
-      id: '/prompts/$slug'
-      path: '/prompts/$slug'
-      fullPath: '/prompts/$slug'
-      preLoaderRoute: typeof PromptsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/industry/$slug': {
@@ -583,146 +417,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog/$slug': {
-      id: '/blog/$slug'
-      path: '/blog/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/submit': {
-      id: '/_authenticated/submit'
-      path: '/submit'
-      fullPath: '/submit'
-      preLoaderRoute: typeof AuthenticatedSubmitRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/': {
-      id: '/_authenticated/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/tools': {
-      id: '/_authenticated/admin/tools'
+    '/admin/tools': {
+      id: '/admin/tools'
       path: '/tools'
       fullPath: '/admin/tools'
-      preLoaderRoute: typeof AuthenticatedAdminToolsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      preLoaderRoute: typeof AdminToolsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_authenticated/admin/quality': {
-      id: '/_authenticated/admin/quality'
+    '/admin/quality': {
+      id: '/admin/quality'
       path: '/quality'
       fullPath: '/admin/quality'
-      preLoaderRoute: typeof AuthenticatedAdminQualityRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      preLoaderRoute: typeof AdminQualityRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_authenticated/admin/import': {
-      id: '/_authenticated/admin/import'
+    '/admin/import': {
+      id: '/admin/import'
       path: '/import'
       fullPath: '/admin/import'
-      preLoaderRoute: typeof AuthenticatedAdminImportRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      preLoaderRoute: typeof AdminImportRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_authenticated/admin/analytics': {
-      id: '/_authenticated/admin/analytics'
+    '/admin/analytics': {
+      id: '/admin/analytics'
       path: '/analytics'
       fullPath: '/admin/analytics'
-      preLoaderRoute: typeof AuthenticatedAdminAnalyticsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/blog/': {
-      id: '/_authenticated/admin/blog/'
-      path: '/blog'
-      fullPath: '/admin/blog/'
-      preLoaderRoute: typeof AuthenticatedAdminBlogIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/blog/$id': {
-      id: '/_authenticated/admin/blog/$id'
-      path: '/blog/$id'
-      fullPath: '/admin/blog/$id'
-      preLoaderRoute: typeof AuthenticatedAdminBlogIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
     }
   }
 }
 
-interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
-  AuthenticatedAdminImportRoute: typeof AuthenticatedAdminImportRoute
-  AuthenticatedAdminQualityRoute: typeof AuthenticatedAdminQualityRoute
-  AuthenticatedAdminToolsRoute: typeof AuthenticatedAdminToolsRoute
-  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
-  AuthenticatedAdminBlogIdRoute: typeof AuthenticatedAdminBlogIdRoute
-  AuthenticatedAdminBlogIndexRoute: typeof AuthenticatedAdminBlogIndexRoute
+interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminImportRoute: typeof AdminImportRoute
+  AdminQualityRoute: typeof AdminQualityRoute
+  AdminToolsRoute: typeof AdminToolsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
-const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
-  AuthenticatedAdminImportRoute: AuthenticatedAdminImportRoute,
-  AuthenticatedAdminQualityRoute: AuthenticatedAdminQualityRoute,
-  AuthenticatedAdminToolsRoute: AuthenticatedAdminToolsRoute,
-  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
-  AuthenticatedAdminBlogIdRoute: AuthenticatedAdminBlogIdRoute,
-  AuthenticatedAdminBlogIndexRoute: AuthenticatedAdminBlogIndexRoute,
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminImportRoute: AdminImportRoute,
+  AdminQualityRoute: AdminQualityRoute,
+  AdminToolsRoute: AdminToolsRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
-const AuthenticatedAdminRouteWithChildren =
-  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedSubmitRoute: typeof AuthenticatedSubmitRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedSubmitRoute: AuthenticatedSubmitRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
-  AuthRoute: AuthRoute,
+  AdminRoute: AdminRouteWithChildren,
   CategoriesRoute: CategoriesRoute,
   ContactRoute: ContactRoute,
   PrivacyRoute: PrivacyRoute,
-  PromoteRoute: PromoteRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
-  BlogSlugRoute: BlogSlugRoute,
   CategorySlugRoute: CategorySlugRoute,
   CompareSlugRoute: CompareSlugRoute,
   IndustrySlugRoute: IndustrySlugRoute,
-  PromptsSlugRoute: PromptsSlugRoute,
   ToolsSlugRoute: ToolsSlugRoute,
   UseCaseSlugRoute: UseCaseSlugRoute,
-  BlogIndexRoute: BlogIndexRoute,
   CompareIndexRoute: CompareIndexRoute,
-  PromptsIndexRoute: PromptsIndexRoute,
   ToolsIndexRoute: ToolsIndexRoute,
 }
 export const routeTree = rootRouteImport

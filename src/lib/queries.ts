@@ -168,37 +168,10 @@ export const INDUSTRY_TAXONOMY = [
   "Automotive",
 ] as const;
 
-export type PromptTemplate = {
-  id: string;
-  title: string;
-  slug: string;
-  description: string | null;
-  prompt: string;
-  use_case: string | null;
-  category: string | null;
-  model: string | null;
-  tags: string[] | null;
-  uses: number;
-};
-
-export type BlogPost = {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  content: string | null;
-  cover_url: string | null;
-  category: string | null;
-  tags: string[] | null;
-  published: boolean;
-  published_at: string | null;
-};
-
 const baseToolSelect = "*, category:categories(*)";
 
 export const Q = {
-  categories: () =>
-    supabase.from("categories").select("*").order("sort_order"),
+  categories: () => supabase.from("categories").select("*").order("sort_order"),
   categoryBySlug: (slug: string) =>
     supabase.from("categories").select("*").eq("slug", slug).maybeSingle(),
   tools: async (opts?: {
@@ -214,10 +187,7 @@ export const Q = {
     industries?: string[];
     useCases?: string[];
   }): Promise<{ data: Tool[] | null; error: any }> => {
-    let q = supabase
-      .from("tools")
-      .select(baseToolSelect)
-      .eq("status", "approved");
+    let q = supabase.from("tools").select(baseToolSelect).eq("status", "approved");
 
     if (opts?.categoryIds && opts.categoryIds.length > 0) {
       q = q.in("category_id", opts.categoryIds);
@@ -243,7 +213,7 @@ export const Q = {
       if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
       else if (opts?.sort === "views") q = q.order("views", { ascending: false });
       else q = q.order("created_at", { ascending: false });
-      
+
       if (opts?.limit) q = q.limit(opts.limit);
 
       const res = await q;
@@ -262,7 +232,8 @@ export const Q = {
       let sorted = [...res.data] as Tool[];
       if (opts?.sort === "rating") sorted.sort((a, b) => b.rating - a.rating);
       else if (opts?.sort === "views") sorted.sort((a, b) => b.views - a.views);
-      else sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      else
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       if (opts?.limit) sorted = sorted.slice(0, opts.limit);
       return { data: sorted, error: null };
     }
@@ -278,19 +249,19 @@ export const Q = {
       } else if (nameLower.startsWith(searchLower)) {
         score += 500;
       }
-      
+
       const nameWords = nameLower.split(/\s+/).filter(Boolean);
       const nameWordStarts = nameWords.some((w: string) => w.startsWith(searchLower));
       if (nameWordStarts) {
         score += 300;
       }
-      
+
       if (nameLower.includes(searchLower)) {
         score += 100;
       }
 
       let keywordNameMatches = 0;
-      searchKeywords.forEach(keyword => {
+      searchKeywords.forEach((keyword) => {
         if (nameWords.includes(keyword)) {
           keywordNameMatches += 1;
         } else if (nameLower.includes(keyword)) {
@@ -304,7 +275,7 @@ export const Q = {
       }
 
       let keywordDescMatches = 0;
-      searchKeywords.forEach(keyword => {
+      searchKeywords.forEach((keyword) => {
         if (shortDescLower.includes(keyword) || fullDescLower.includes(keyword)) {
           keywordDescMatches += 1;
         }
@@ -319,7 +290,7 @@ export const Q = {
       return { tool: tool as Tool, score };
     });
 
-    let filteredScored = scoredTools.filter(item => item.score > 0);
+    const filteredScored = scoredTools.filter((item) => item.score > 0);
 
     filteredScored.sort((a, b) => {
       if (b.score !== a.score) {
@@ -334,14 +305,17 @@ export const Q = {
       return new Date(b.tool.created_at).getTime() - new Date(a.tool.created_at).getTime();
     });
 
-    let finalTools = filteredScored.map(item => item.tool);
+    let finalTools = filteredScored.map((item) => item.tool);
     if (opts?.limit) {
       finalTools = finalTools.slice(0, opts.limit);
     }
 
     return { data: finalTools, error: null };
   },
-  toolsByCapability: (capability: string, opts?: { sort?: "rating" | "views" | "newest"; limit?: number }) => {
+  toolsByCapability: (
+    capability: string,
+    opts?: { sort?: "rating" | "views" | "newest"; limit?: number },
+  ) => {
     let q = supabase
       .from("tools")
       .select(baseToolSelect)
@@ -355,7 +329,10 @@ export const Q = {
     if (opts?.limit) q = q.limit(opts.limit);
     return q;
   },
-  toolsByUseCase: (useCase: string, opts?: { sort?: "rating" | "views" | "newest"; limit?: number }) => {
+  toolsByUseCase: (
+    useCase: string,
+    opts?: { sort?: "rating" | "views" | "newest"; limit?: number },
+  ) => {
     let q = supabase
       .from("tools")
       .select(baseToolSelect)
@@ -369,7 +346,10 @@ export const Q = {
     if (opts?.limit) q = q.limit(opts.limit);
     return q;
   },
-  toolsByIndustry: (industry: string, opts?: { sort?: "rating" | "views" | "newest"; limit?: number }) => {
+  toolsByIndustry: (
+    industry: string,
+    opts?: { sort?: "rating" | "views" | "newest"; limit?: number },
+  ) => {
     let q = supabase
       .from("tools")
       .select(baseToolSelect)
@@ -399,8 +379,7 @@ export const Q = {
     supabase.from("tools").select(baseToolSelect).eq("slug", slug).maybeSingle(),
   toolFeatures: (toolId: string) =>
     supabase.from("tool_features").select("*").eq("tool_id", toolId).order("sort_order"),
-  toolTags: (toolId: string) =>
-    supabase.from("tool_tags").select("*").eq("tool_id", toolId),
+  toolTags: (toolId: string) => supabase.from("tool_tags").select("*").eq("tool_id", toolId),
   toolScreenshots: (toolId: string) =>
     supabase.from("tool_screenshots").select("*").eq("tool_id", toolId).order("sort_order"),
   reviews: (toolId: string) =>
@@ -410,34 +389,18 @@ export const Q = {
       .eq("tool_id", toolId)
       .eq("status", "approved")
       .order("created_at", { ascending: false }),
-  prompts: (opts?: { category?: string; search?: string; limit?: number }) => {
-    let q = supabase.from("prompt_templates").select("*").order("created_at", { ascending: false });
-    if (opts?.category) q = q.eq("category", opts.category);
-    if (opts?.search) q = q.or(`title.ilike.%${opts.search}%,description.ilike.%${opts.search}%`);
-    if (opts?.limit) q = q.limit(opts.limit);
-    return q;
-  },
-  promptBySlug: (slug: string) =>
-    supabase.from("prompt_templates").select("*").eq("slug", slug).maybeSingle(),
-  blogPosts: (opts?: { limit?: number; category?: string }) => {
-    let q = supabase
-      .from("blog_posts")
-      .select("*")
-      .eq("published", true)
-      .order("published_at", { ascending: false });
-    if (opts?.category) q = q.eq("category", opts.category);
-    if (opts?.limit) q = q.limit(opts.limit);
-    return q;
-  },
-  blogPostBySlug: (slug: string) =>
-    supabase.from("blog_posts").select("*").eq("slug", slug).eq("published", true).maybeSingle(),
+
   comparisonBySlug: (slug: string) =>
     supabase.from("tool_comparisons").select("*").eq("slug", slug).maybeSingle(),
   comparisons: () =>
     supabase.from("tool_comparisons").select("*").order("created_at", { ascending: false }),
 };
 
-export async function logEvent(eventType: string, metadata: Record<string, unknown> = {}, toolId?: string) {
+export async function logEvent(
+  eventType: string,
+  metadata: Record<string, unknown> = {},
+  toolId?: string,
+) {
   try {
     await supabase.from("analytics_events").insert({
       event_type: eventType,

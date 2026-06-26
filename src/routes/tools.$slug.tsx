@@ -1,13 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Star, BadgeCheck, Heart, Share2, GitCompareArrows, Check, X, Globe } from "lucide-react";
+import {
+  ExternalLink,
+  Star,
+  BadgeCheck,
+  Share2,
+  GitCompareArrows,
+  Check,
+  X,
+  Globe,
+} from "lucide-react";
 import { useEffect } from "react";
 import { Q, logEvent } from "@/lib/queries";
 import { ToolCard } from "@/components/ToolCard";
 import { TagBadge } from "@/components/DynamicCategoryCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -15,7 +23,10 @@ export const Route = createFileRoute("/tools/$slug")({
   head: ({ params }) => ({
     meta: [
       { title: `${prettify(params.slug)} — Review, Features & Pricing | AI Tools Hub` },
-      { name: "description", content: `In-depth review of ${prettify(params.slug)}: features, pricing, pros/cons, ratings, and alternatives.` },
+      {
+        name: "description",
+        content: `In-depth review of ${prettify(params.slug)}: features, pricing, pros/cons, ratings, and alternatives.`,
+      },
       { property: "og:title", content: `${prettify(params.slug)} — AI Tools Hub` },
       { property: "og:url", content: `https://khozoai.com/tools/${params.slug}` },
       { property: "og:type", content: "article" },
@@ -26,7 +37,10 @@ export const Route = createFileRoute("/tools/$slug")({
 });
 
 function prettify(s: string) {
-  return s.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+  return s
+    .split("-")
+    .map((w) => w[0]?.toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 function slugify(s: string) {
@@ -40,11 +54,13 @@ function slugify(s: string) {
 
 function ToolDetail() {
   const { slug } = Route.useParams();
-  const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
-  const tool = useQuery({ queryKey: ["tool", slug], queryFn: async () => (await Q.toolBySlug(slug)).data });
+  const tool = useQuery({
+    queryKey: ["tool", slug],
+    queryFn: async () => (await Q.toolBySlug(slug)).data,
+  });
   const features = useQuery({
     enabled: !!tool.data?.id,
     queryKey: ["tool", slug, "features"],
@@ -63,77 +79,40 @@ function ToolDetail() {
       return (data ?? []).filter((t) => t.id !== tool.data!.id).slice(0, 4);
     },
   });
-  const relatedPrompts = useQuery({
-    enabled: !!tool.data?.id,
-    queryKey: ["tool", slug, "prompts", tool.data?.category?.name],
-    queryFn: async () => {
-      const categoryName = tool.data?.category?.name;
-      let matched = [];
-      if (categoryName) {
-        const { data } = await Q.prompts({ category: categoryName, limit: 3 });
-        matched = data ?? [];
-      }
-      if (matched.length === 0) {
-        const { data } = await Q.prompts({ limit: 3 });
-        matched = data ?? [];
-      }
-      return matched;
-    },
-  });
-  const relatedBlogs = useQuery({
-    enabled: !!tool.data?.id,
-    queryKey: ["tool", slug, "blogs", tool.data?.category?.name],
-    queryFn: async () => {
-      const categoryName = tool.data?.category?.name;
-      let matched = [];
-      if (categoryName) {
-        const { data } = await Q.blogPosts({ category: categoryName, limit: 3 });
-        matched = data ?? [];
-      }
-      if (matched.length === 0) {
-        const { data } = await Q.blogPosts({ limit: 3 });
-        matched = data ?? [];
-      }
-      return matched;
-    },
-  });
-  const isFav = useQuery({
-    enabled: !!user && !!tool.data?.id,
-    queryKey: ["favorite", tool.data?.id, user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("favorites").select("id")
-        .eq("user_id", user!.id).eq("tool_id", tool.data!.id).maybeSingle();
-      return !!data;
-    },
-  });
-  const toggleFav = useMutation({
-    mutationFn: async () => {
-      if (!user) { navigate({ to: "/auth" }); return; }
-      if (isFav.data) await supabase.from("favorites").delete().eq("user_id", user.id).eq("tool_id", tool.data!.id);
-      else await supabase.from("favorites").insert({ user_id: user.id, tool_id: tool.data!.id });
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["favorite", tool.data?.id] }),
-  });
 
-  useEffect(() => { if (tool.data?.id) logEvent("tool_view", { slug }, tool.data.id); }, [tool.data?.id, slug]);
+  useEffect(() => {
+    if (tool.data?.id) logEvent("tool_view", { slug }, tool.data.id);
+  }, [tool.data?.id, slug]);
 
   if (tool.isLoading) return <div className="mx-auto max-w-5xl px-4 py-20">Loading…</div>;
-  if (!tool.data) return (
-    <div className="mx-auto max-w-5xl px-4 py-20 text-center">
-      <h1 className="font-display text-3xl font-bold">Tool not found</h1>
-      <Link to="/tools" className="mt-4 inline-block text-primary">← Browse all tools</Link>
-    </div>
-  );
+  if (!tool.data)
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-20 text-center">
+        <h1 className="font-display text-3xl font-bold">Tool not found</h1>
+        <Link to="/tools" className="mt-4 inline-block text-primary">
+          ← Browse all tools
+        </Link>
+      </div>
+    );
 
   const t = tool.data;
-  const hostname = (() => { try { return new URL(t.website_url).hostname.replace(/^www\./, ""); } catch { return t.website_url; } })();
+  const hostname = (() => {
+    try {
+      return new URL(t.website_url).hostname.replace(/^www\./, "");
+    } catch {
+      return t.website_url;
+    }
+  })();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <Link to="/tools" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/tools"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         ← Back to tools
       </Link>
-      
+
       <Breadcrumbs
         items={[
           { label: "Tools", href: "/tools" },
@@ -148,27 +127,35 @@ function ToolDetail() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": t.name,
-            "description": t.short_description,
-            "applicationCategory": t.category?.name || "MultimediaApplication",
-            "operatingSystem": "All",
-            "url": `https://khozoai.com/tools/${t.slug}`,
-            ...(t.logo_url ? { "image": t.logo_url.startsWith("http") ? t.logo_url : `https://khozoai.com${t.logo_url}` } : {}),
-            "offers": {
+            name: t.name,
+            description: t.short_description,
+            applicationCategory: t.category?.name || "MultimediaApplication",
+            operatingSystem: "All",
+            url: `https://khozoai.com/tools/${t.slug}`,
+            ...(t.logo_url
+              ? {
+                  image: t.logo_url.startsWith("http")
+                    ? t.logo_url
+                    : `https://khozoai.com${t.logo_url}`,
+                }
+              : {}),
+            offers: {
               "@type": "Offer",
-              "price": t.pricing === "free" ? "0" : undefined,
-              "priceCurrency": "USD",
-              "category": t.pricing,
+              price: t.pricing === "free" ? "0" : undefined,
+              priceCurrency: "USD",
+              category: t.pricing,
             },
-            ...(t.review_count > 0 ? {
-              "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": Number(t.rating).toFixed(1),
-                "ratingCount": t.review_count,
-                "bestRating": "5",
-                "worstRating": "1",
-              }
-            } : {}),
+            ...(t.review_count > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: Number(t.rating).toFixed(1),
+                    ratingCount: t.review_count,
+                    bestRating: "5",
+                    worstRating: "1",
+                  },
+                }
+              : {}),
           }),
         }}
       />
@@ -179,16 +166,26 @@ function ToolDetail() {
           <div className="flex min-w-0 items-start gap-4">
             <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface sm:h-20 sm:w-20">
               {t.logo_url ? (
-                <img src={t.logo_url} alt="" className="h-full w-full object-contain"
-                  onError={(e) => (e.currentTarget.style.display = "none")} />
+                <img
+                  src={t.logo_url}
+                  alt=""
+                  className="h-full w-full object-contain"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
+                />
               ) : (
-                <span className="font-display text-2xl font-bold text-foreground/60">{t.name[0]}</span>
+                <span className="font-display text-2xl font-bold text-foreground/60">
+                  {t.name[0]}
+                </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{t.name}</h1>
-                {t.verified && <BadgeCheck className="h-5 w-5 text-primary" aria-label="Verified" />}
+                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                  {t.name}
+                </h1>
+                {t.verified && (
+                  <BadgeCheck className="h-5 w-5 text-primary" aria-label="Verified" />
+                )}
                 {t.featured && (
                   <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
                     Featured
@@ -200,41 +197,56 @@ function ToolDetail() {
                 <span className="inline-flex items-center gap-1 font-medium">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                   {Number(t.rating).toFixed(1)}
-                  <span className="font-normal text-muted-foreground">({t.review_count} reviews)</span>
+                  <span className="font-normal text-muted-foreground">
+                    ({t.review_count} reviews)
+                  </span>
                 </span>
                 {t.category && (
-                  <Link to="/category/$slug" params={{ slug: t.category.slug }} className="text-muted-foreground hover:text-primary">
+                  <Link
+                    to="/category/$slug"
+                    params={{ slug: t.category.slug }}
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     {t.category.name}
                   </Link>
                 )}
                 <span className="capitalize text-muted-foreground">{t.pricing}</span>
-                <span className="inline-flex items-center gap-1 text-muted-foreground"><Globe className="h-3.5 w-3.5" /> {hostname}</span>
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <Globe className="h-3.5 w-3.5" /> {hostname}
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2 border-t border-border pt-5">
-          <a href={t.affiliate_url || t.website_url} target="_blank" rel="noreferrer noopener"
+          <a
+            href={t.affiliate_url || t.website_url}
+            target="_blank"
+            rel="noreferrer noopener"
             onClick={() => logEvent("tool_click", { slug: t.slug }, t.id)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
             Visit website <ExternalLink className="h-4 w-4" />
           </a>
-          <Button variant="outline" onClick={() => toggleFav.mutate()}>
-            <Heart className={`mr-1 h-4 w-4 ${isFav.data ? "fill-rose-500 text-rose-500" : ""}`} />
-            {isFav.data ? "Saved" : "Save"}
-          </Button>
-          <Button variant="outline" onClick={() => navigate({ to: "/compare", search: { a: t.slug } })}>
+
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/compare", search: { a: t.slug } })}
+          >
             <GitCompareArrows className="mr-1 h-4 w-4" /> Compare
           </Button>
-          <Button variant="outline" onClick={() => {
-            if (typeof navigator !== "undefined" && navigator.share) {
-              navigator.share({ title: t.name, url: window.location.href });
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              toast.success("Link copied");
-            }
-          }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (typeof navigator !== "undefined" && navigator.share) {
+                navigator.share({ title: t.name, url: window.location.href });
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                toast.success("Link copied");
+              }
+            }}
+          >
             <Share2 className="mr-1 h-4 w-4" /> Share
           </Button>
         </div>
@@ -245,7 +257,9 @@ function ToolDetail() {
           {t.full_description && (
             <section>
               <h2 className="font-display text-xl font-bold tracking-tight">About {t.name}</h2>
-              <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{t.full_description}</p>
+              <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
+                {t.full_description}
+              </p>
             </section>
           )}
 
@@ -254,7 +268,10 @@ function ToolDetail() {
               <h2 className="font-display text-xl font-bold tracking-tight">Key features</h2>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {features.data.map((f) => (
-                  <li key={f.id} className="flex items-start gap-2 rounded-lg border border-border bg-card p-3 text-sm">
+                  <li
+                    key={f.id}
+                    className="flex items-start gap-2 rounded-lg border border-border bg-card p-3 text-sm"
+                  >
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {f.feature}
                   </li>
                 ))}
@@ -263,44 +280,74 @@ function ToolDetail() {
           )}
 
           {/* Classification Tags */}
-          {(t.capabilities?.length || t.use_cases?.length || t.industries?.length || t.best_for?.length || t.not_good_for?.length) ? (
+          {t.capabilities?.length ||
+          t.use_cases?.length ||
+          t.industries?.length ||
+          t.best_for?.length ||
+          t.not_good_for?.length ? (
             <section className="space-y-6">
               {t.capabilities && t.capabilities.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Capabilities</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Capabilities
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {t.capabilities.map((cap) => (
-                      <TagBadge key={cap} label={cap} href={`/category/${slugify(cap)}`} variant="capability" />
+                      <TagBadge
+                        key={cap}
+                        label={cap}
+                        href={`/category/${slugify(cap)}`}
+                        variant="capability"
+                      />
                     ))}
                   </div>
                 </div>
               )}
               {t.use_cases && t.use_cases.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Use Cases</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Use Cases
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {t.use_cases.map((uc) => (
-                      <TagBadge key={uc} label={uc} href={`/use-case/${slugify(uc)}`} variant="use_case" />
+                      <TagBadge
+                        key={uc}
+                        label={uc}
+                        href={`/use-case/${slugify(uc)}`}
+                        variant="use_case"
+                      />
                     ))}
                   </div>
                 </div>
               )}
               {t.industries && t.industries.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Industries</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Industries
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {t.industries.map((ind) => (
-                      <TagBadge key={ind} label={ind} href={`/industry/${slugify(ind)}`} variant="industry" />
+                      <TagBadge
+                        key={ind}
+                        label={ind}
+                        href={`/industry/${slugify(ind)}`}
+                        variant="industry"
+                      />
                     ))}
                   </div>
                 </div>
               )}
               {t.best_for && t.best_for.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Best For</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Best For
+                  </h3>
                   <ul className="flex flex-wrap gap-2">
                     {t.best_for.map((item) => (
-                      <li key={item} className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-medium text-emerald-600">
+                      <li
+                        key={item}
+                        className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-medium text-emerald-600"
+                      >
                         <Check className="mr-1 h-3 w-3" /> {item}
                       </li>
                     ))}
@@ -309,10 +356,15 @@ function ToolDetail() {
               )}
               {t.not_good_for && t.not_good_for.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Not Good For</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Not Good For
+                  </h3>
                   <ul className="flex flex-wrap gap-2">
                     {t.not_good_for.map((item) => (
-                      <li key={item} className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/5 px-3 py-1 text-xs font-medium text-rose-600">
+                      <li
+                        key={item}
+                        className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/5 px-3 py-1 text-xs font-medium text-rose-600"
+                      >
                         <X className="mr-1 h-3 w-3" /> {item}
                       </li>
                     ))}
@@ -322,14 +374,18 @@ function ToolDetail() {
             </section>
           ) : null}
 
-          {(t.pros?.length || t.cons?.length) ? (
+          {t.pros?.length || t.cons?.length ? (
             <section className="grid gap-4 md:grid-cols-2">
               {t.pros && t.pros.length > 0 && (
                 <div className="rounded-xl border border-border bg-card p-5">
                   <h3 className="mb-3 flex items-center gap-2 font-display font-bold">
                     <Check className="h-4 w-4 text-emerald-600" /> Pros
                   </h3>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground">{t.pros.map((p, i) => <li key={i}>• {p}</li>)}</ul>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    {t.pros.map((p, i) => (
+                      <li key={i}>• {p}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
               {t.cons && t.cons.length > 0 && (
@@ -337,7 +393,11 @@ function ToolDetail() {
                   <h3 className="mb-3 flex items-center gap-2 font-display font-bold">
                     <X className="h-4 w-4 text-destructive" /> Cons
                   </h3>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground">{t.cons.map((p, i) => <li key={i}>• {p}</li>)}</ul>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    {t.cons.map((p, i) => (
+                      <li key={i}>• {p}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </section>
@@ -349,18 +409,29 @@ function ToolDetail() {
         <aside className="space-y-5">
           <InfoBlock title="Pricing">
             <div className="text-base font-semibold capitalize">{t.pricing}</div>
-            {t.pricing_details && <p className="mt-2 text-sm text-muted-foreground">{t.pricing_details}</p>}
+            {t.pricing_details && (
+              <p className="mt-2 text-sm text-muted-foreground">{t.pricing_details}</p>
+            )}
           </InfoBlock>
           {t.platforms && t.platforms.length > 0 && (
             <InfoBlock title="Platforms">
               <div className="flex flex-wrap gap-1.5">
-                {t.platforms.map((p) => <span key={p} className="rounded-md border border-border bg-surface px-2 py-0.5 text-xs">{p}</span>)}
+                {t.platforms.map((p) => (
+                  <span
+                    key={p}
+                    className="rounded-md border border-border bg-surface px-2 py-0.5 text-xs"
+                  >
+                    {p}
+                  </span>
+                ))}
               </div>
             </InfoBlock>
           )}
           {related.data && related.data.length > 0 && (
             <div>
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Compare {t.name} with</div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Compare {t.name} with
+              </div>
               <div className="space-y-2">
                 {related.data.map((r) => (
                   <Link
@@ -377,51 +448,22 @@ function ToolDetail() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold">{t.name} vs {r.name}</div>
-                      <div className="truncate text-xs text-muted-foreground">{r.short_description}</div>
+                      <div className="truncate text-sm font-semibold">
+                        {t.name} vs {r.name}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {r.short_description}
+                      </div>
                     </div>
                   </Link>
                 ))}
               </div>
-              <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alternatives</div>
-              <div className="mt-3 space-y-3">{related.data.map((r) => <ToolCard key={r.id} tool={r} />)}</div>
-            </div>
-          )}
-
-          {relatedPrompts.data && relatedPrompts.data.length > 0 && (
-            <div>
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Useful AI Prompts</div>
-              <div className="space-y-2">
-                {relatedPrompts.data.map((p) => (
-                  <Link
-                    key={p.id}
-                    to="/prompts/$slug"
-                    params={{ slug: p.slug }}
-                    className="card-hover block rounded-lg border border-border bg-card p-3"
-                  >
-                    <div className="text-[10px] uppercase tracking-wider text-primary font-medium">{p.category}</div>
-                    <div className="font-semibold text-sm mt-0.5 truncate">{p.title}</div>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{p.description}</p>
-                  </Link>
-                ))}
+              <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Alternatives
               </div>
-            </div>
-          )}
-
-          {relatedBlogs.data && relatedBlogs.data.length > 0 && (
-            <div>
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guides & Tutorials</div>
-              <div className="space-y-2">
-                {relatedBlogs.data.map((b) => (
-                  <Link
-                    key={b.id}
-                    to="/blog/$slug"
-                    params={{ slug: b.slug }}
-                    className="card-hover block rounded-lg border border-border bg-card p-3"
-                  >
-                    <div className="font-semibold text-sm truncate">{b.title}</div>
-                    {b.excerpt && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{b.excerpt}</p>}
-                  </Link>
+              <div className="mt-3 space-y-3">
+                {related.data.map((r) => (
+                  <ToolCard key={r.id} tool={r} />
                 ))}
               </div>
             </div>
@@ -435,71 +477,40 @@ function ToolDetail() {
 function InfoBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </div>
       {children}
     </div>
   );
 }
 
-function ReviewsSection({ toolId, reviews }: { toolId: string; reviews: { id: string; rating: number; title: string | null; body: string | null; created_at: string }[] }) {
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const navigate = useNavigate();
-  const submit = useMutation({
-    mutationFn: async (vars: { rating: number; title: string; body: string }) => {
-      if (!user) { navigate({ to: "/auth" }); return; }
-      const { error } = await supabase.from("reviews").upsert({
-        tool_id: toolId, user_id: user.id, rating: vars.rating, title: vars.title, body: vars.body, status: "approved",
-      }, { onConflict: "tool_id,user_id" });
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Review posted"); qc.invalidateQueries({ queryKey: ["tool"] }); },
-    onError: (e) => toast.error((e as Error).message),
-  });
-
+function ReviewsSection({
+  reviews,
+}: {
+  toolId: string;
+  reviews: {
+    id: string;
+    rating: number;
+    title: string | null;
+    body: string | null;
+    created_at: string;
+  }[];
+}) {
   return (
     <section>
       <h2 className="font-display text-xl font-bold tracking-tight">Reviews</h2>
-      <div className="mt-3">
-      {user ? (
-        <form
-          className="space-y-3 rounded-xl border border-border bg-card p-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            submit.mutate({
-              rating: Number(fd.get("rating")),
-              title: String(fd.get("title") || ""),
-              body: String(fd.get("body") || ""),
-            });
-            e.currentTarget.reset();
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Your rating:</span>
-            <select name="rating" defaultValue={5} className="h-9 rounded-md border border-border bg-background px-2 text-sm">
-              {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n} ★</option>)}
-            </select>
-          </div>
-          <input name="title" placeholder="Title (optional)" maxLength={120} className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" />
-          <textarea name="body" placeholder="Share your experience…" maxLength={2000} rows={3} className="w-full rounded-md border border-border bg-background p-3 text-sm" />
-          <Button type="submit">Post review</Button>
-        </form>
-      ) : (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-5 text-sm">
-          <Link to="/auth" className="font-medium text-primary">Sign in</Link> to write a review.
-        </div>
-      )}
-      </div>
       <div className="mt-6 space-y-4">
-        {reviews.length === 0 && <p className="text-sm text-muted-foreground">No reviews yet. Be the first!</p>}
+        {reviews.length === 0 && <p className="text-sm text-muted-foreground">No reviews yet.</p>}
         {reviews.map((r) => (
           <div key={r.id} className="rounded-xl border border-border bg-card p-5">
             <div className="flex items-center gap-2">
               {Array.from({ length: r.rating }).map((_, i) => (
                 <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
               ))}
-              <span className="ml-auto text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {new Date(r.created_at).toLocaleDateString()}
+              </span>
             </div>
             {r.title && <div className="mt-2 font-semibold">{r.title}</div>}
             {r.body && <p className="mt-1 text-sm text-muted-foreground">{r.body}</p>}

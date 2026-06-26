@@ -24,7 +24,11 @@ export const Route = createFileRoute("/tools/")({
   head: () => ({
     meta: [
       { title: "All AI Tools — Browse the Full Directory | AI Tools Hub" },
-      { name: "description", content: "Browse, filter, and sort every AI tool in our directory by category, pricing, popularity, and rating." },
+      {
+        name: "description",
+        content:
+          "Browse, filter, and sort every AI tool in our directory by category, pricing, popularity, and rating.",
+      },
       { property: "og:title", content: "All AI Tools — AI Tools Hub" },
       { property: "og:url", content: "https://khozoai.com/tools" },
     ],
@@ -47,45 +51,64 @@ function ToolsPage() {
     industries: true,
   });
 
-  const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await Q.categories()).data ?? [] });
-  const capabilities = useQuery({ queryKey: ["dynamic-categories"], queryFn: () => Q.dynamicCategories() });
-  const useCases = useQuery({ queryKey: ["dynamic-use-cases"], queryFn: () => Q.dynamicUseCases() });
-  const industries = useQuery({ queryKey: ["dynamic-industries"], queryFn: () => Q.dynamicIndustries() });
+  const cats = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => (await Q.categories()).data ?? [],
+  });
+  const capabilities = useQuery({
+    queryKey: ["dynamic-categories"],
+    queryFn: () => Q.dynamicCategories(),
+  });
+  const useCases = useQuery({
+    queryKey: ["dynamic-use-cases"],
+    queryFn: () => Q.dynamicUseCases(),
+  });
+  const industries = useQuery({
+    queryKey: ["dynamic-industries"],
+    queryFn: () => Q.dynamicIndustries(),
+  });
 
   const tools = useQuery({
-    queryKey: ["tools", "list", { sort, categoryIds, pricing, selectedCapabilities, selectedUseCases, selectedIndustries }],
-    queryFn: async () => (await Q.tools({
-      sort,
-      categoryIds,
-      pricing,
-      capabilities: selectedCapabilities,
-      useCases: selectedUseCases,
-      industries: selectedIndustries,
-      limit: 120,
-    })).data ?? [],
+    queryKey: [
+      "tools",
+      "list",
+      { sort, categoryIds, pricing, selectedCapabilities, selectedUseCases, selectedIndustries },
+    ],
+    queryFn: async () =>
+      (
+        await Q.tools({
+          sort,
+          categoryIds,
+          pricing,
+          capabilities: selectedCapabilities,
+          useCases: selectedUseCases,
+          industries: selectedIndustries,
+          limit: 120,
+        })
+      ).data ?? [],
   });
 
   const handleCategoryToggle = (id: string) => {
     setCategoryIds((prev) =>
-      prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id],
     );
   };
 
   const handleCapabilityToggle = (cap: string) => {
     setSelectedCapabilities((prev) =>
-      prev.includes(cap) ? prev.filter((c) => c !== cap) : [...prev, cap]
+      prev.includes(cap) ? prev.filter((c) => c !== cap) : [...prev, cap],
     );
   };
 
   const handleUseCaseToggle = (uc: string) => {
     setSelectedUseCases((prev) =>
-      prev.includes(uc) ? prev.filter((u) => u !== uc) : [...prev, uc]
+      prev.includes(uc) ? prev.filter((u) => u !== uc) : [...prev, uc],
     );
   };
 
   const handleIndustryToggle = (ind: string) => {
     setSelectedIndustries((prev) =>
-      prev.includes(ind) ? prev.filter((i) => i !== ind) : [...prev, ind]
+      prev.includes(ind) ? prev.filter((i) => i !== ind) : [...prev, ind],
     );
   };
 
@@ -93,8 +116,13 @@ function ToolsPage() {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const hasActiveFilters = categoryIds.length > 0 || !!pricing || sort !== "rating" ||
-    selectedCapabilities.length > 0 || selectedUseCases.length > 0 || selectedIndustries.length > 0;
+  const hasActiveFilters =
+    categoryIds.length > 0 ||
+    !!pricing ||
+    sort !== "rating" ||
+    selectedCapabilities.length > 0 ||
+    selectedUseCases.length > 0 ||
+    selectedIndustries.length > 0;
 
   const resetFilters = () => {
     setCategoryIds([]);
@@ -109,7 +137,9 @@ function ToolsPage() {
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">All AI Tools</h1>
-        <p className="mt-2 text-muted-foreground">Filter and discover the right tool for the job.</p>
+        <p className="mt-2 text-muted-foreground">
+          Filter and discover the right tool for the job.
+        </p>
       </div>
 
       {/* Mobile filter toggle */}
@@ -126,7 +156,9 @@ function ToolsPage() {
 
       <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className={`space-y-6 lg:block lg:sticky lg:top-20 lg:self-start ${showMobileFilters ? "block" : "hidden"}`}>
+        <aside
+          className={`space-y-6 lg:block lg:sticky lg:top-20 lg:self-start ${showMobileFilters ? "block" : "hidden"}`}
+        >
           <FilterGroup label="Sort by">
             <div className="flex flex-col gap-1">
               {SORTS.map((s) => (
@@ -134,7 +166,9 @@ function ToolsPage() {
                   key={s.key}
                   onClick={() => setSort(s.key)}
                   className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                    sort === s.key ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground"
+                    sort === s.key
+                      ? "bg-primary/10 font-medium text-primary"
+                      : "text-muted-foreground hover:bg-surface hover:text-foreground"
                   }`}
                 >
                   {s.label}
@@ -150,7 +184,11 @@ function ToolsPage() {
                 onClick={() => toggleSection("capabilities")}
                 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
-                {expandedSections.capabilities ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {expandedSections.capabilities ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
               </button>
               {expandedSections.capabilities && (
                 <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-1.5">
@@ -172,7 +210,9 @@ function ToolsPage() {
                           className="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary/20 accent-primary"
                         />
                         <span className="truncate">{c.capability}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">{c.tool_count}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">
+                          {c.tool_count}
+                        </span>
                       </label>
                     );
                   })}
@@ -188,7 +228,11 @@ function ToolsPage() {
                 onClick={() => toggleSection("useCases")}
                 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
-                {expandedSections.useCases ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {expandedSections.useCases ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
               </button>
               {expandedSections.useCases && (
                 <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-1.5">
@@ -210,7 +254,9 @@ function ToolsPage() {
                           className="h-4 w-4 rounded border-border bg-background text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600"
                         />
                         <span className="truncate">{uc.use_case}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">{uc.tool_count}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">
+                          {uc.tool_count}
+                        </span>
                       </label>
                     );
                   })}
@@ -226,7 +272,11 @@ function ToolsPage() {
                 onClick={() => toggleSection("industries")}
                 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
-                {expandedSections.industries ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {expandedSections.industries ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
               </button>
               {expandedSections.industries && (
                 <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-1.5">
@@ -248,7 +298,9 @@ function ToolsPage() {
                           className="h-4 w-4 rounded border-border bg-background text-violet-600 focus:ring-violet-500/20 accent-violet-600"
                         />
                         <span className="truncate">{ind.industry}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">{ind.tool_count}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">
+                          {ind.tool_count}
+                        </span>
                       </label>
                     );
                   })}
@@ -286,7 +338,9 @@ function ToolsPage() {
 
           <FilterGroup label="Pricing">
             <div className="flex flex-wrap gap-1.5">
-              <Pill active={!pricing} onClick={() => setPricing(undefined)}>Any</Pill>
+              <Pill active={!pricing} onClick={() => setPricing(undefined)}>
+                Any
+              </Pill>
               {PRICING.map((p) => (
                 <Pill key={p.key} active={pricing === p.key} onClick={() => setPricing(p.key)}>
                   {p.label}
@@ -311,28 +365,54 @@ function ToolsPage() {
             {hasActiveFilters && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedCapabilities.map((cap) => (
-                  <span key={cap} className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  <span
+                    key={cap}
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary"
+                  >
                     {cap}
-                    <button onClick={() => handleCapabilityToggle(cap)} className="hover:text-primary/70">×</button>
+                    <button
+                      onClick={() => handleCapabilityToggle(cap)}
+                      className="hover:text-primary/70"
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
                 {selectedUseCases.map((uc) => (
-                  <span key={uc} className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                  <span
+                    key={uc}
+                    className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[10px] font-medium text-emerald-600"
+                  >
                     {uc}
-                    <button onClick={() => handleUseCaseToggle(uc)} className="hover:text-emerald-600/70">×</button>
+                    <button
+                      onClick={() => handleUseCaseToggle(uc)}
+                      className="hover:text-emerald-600/70"
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
                 {selectedIndustries.map((ind) => (
-                  <span key={ind} className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/5 px-2 py-0.5 text-[10px] font-medium text-violet-600">
+                  <span
+                    key={ind}
+                    className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/5 px-2 py-0.5 text-[10px] font-medium text-violet-600"
+                  >
                     {ind}
-                    <button onClick={() => handleIndustryToggle(ind)} className="hover:text-violet-600/70">×</button>
+                    <button
+                      onClick={() => handleIndustryToggle(ind)}
+                      className="hover:text-violet-600/70"
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
               </div>
             )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {tools.data?.map((t) => <ToolCard key={t.id} tool={t} />)}
+            {tools.data?.map((t) => (
+              <ToolCard key={t.id} tool={t} />
+            ))}
           </div>
           {!tools.isLoading && tools.data?.length === 0 && (
             <div className="mt-16 rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
@@ -348,18 +428,30 @@ function ToolsPage() {
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       {children}
     </div>
   );
 }
 
-function Pill({ active, onClick, children }: { active?: boolean; onClick: () => void; children: React.ReactNode }) {
+function Pill({
+  active,
+  onClick,
+  children,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-        active ? "border-primary bg-primary/10 font-medium text-primary" : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+        active
+          ? "border-primary bg-primary/10 font-medium text-primary"
+          : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
       }`}
     >
       {children}

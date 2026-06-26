@@ -60,7 +60,11 @@ export function NewsletterSignup({ source = "homepage" }: { source?: string }) {
           className="w-full h-11 rounded-full bg-background/80 border border-border pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       </div>
-      <Button type="submit" disabled={loading} className="h-11 rounded-full bg-gradient-brand text-white border-0 hover:opacity-90 px-6">
+      <Button
+        type="submit"
+        disabled={loading}
+        className="h-11 rounded-full bg-gradient-brand text-white border-0 hover:opacity-90 px-6"
+      >
         {loading ? "..." : "Subscribe"}
       </Button>
     </form>
