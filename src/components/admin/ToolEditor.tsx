@@ -1,11 +1,15 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { X, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { enrichUrl } from "@/lib/admin.functions";
+import {
+  enrichUrl,
+  adminSaveTool,
+  adminGetTool,
+  adminListCategories,
+} from "@/lib/admin.functions";
 import { CAPABILITY_TAXONOMY, USE_CASE_TAXONOMY, INDUSTRY_TAXONOMY } from "@/lib/queries";
 
 type FormState = {
@@ -110,20 +114,28 @@ export function ToolEditor({
   const isNew = toolId === null;
   const [form, setForm] = useState<FormState>(empty);
   const [regenerating, setRegenerating] = useState(false);
+  const qc = useQueryClient();
+
+  const listCatsFn = useServerFn(adminListCategories);
+  const getToolFn = useServerFn(adminGetTool);
+  const saveToolFn = useServerFn(adminSaveTool);
+  const enrichFn = useServerFn(enrichUrl);
 
   const cats = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () =>
-      (await supabase.from("categories").select("id,name").order("name")).data ?? [],
+    queryKey: ["admin", "categories"],
+    queryFn: async () => {
+      const result = await listCatsFn({});
+      return result ?? [];
+    },
   });
   const existing = useQuery({
     enabled: !isNew,
     queryKey: ["admin", "tool", toolId],
-    queryFn: async () =>
-      (await supabase.from("tools").select("*").eq("id", toolId!).maybeSingle()).data,
+    queryFn: async () => {
+      const result = await getToolFn({ data: { id: toolId! } });
+      return result ?? null;
+    },
   });
-
-  const enrichFn = useServerFn(enrichUrl);
 
   useEffect(() => {
     if (existing.data) {
@@ -265,16 +277,11 @@ export function ToolEditor({
           .filter(Boolean),
         compare_data: form.compare_data,
         needs_review: false,
-      } as any;
-      if (isNew) {
-        const { error } = await supabase.from("tools").insert(payload);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("tools").update(payload).eq("id", toolId!);
-        if (error) throw error;
-      }
+      };
+      await saveToolFn({ data: { id: isNew ? undefined : toolId!, payload } });
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin"] });
       toast.success(isNew ? "Tool created" : "Tool updated");
       onSaved();
     },

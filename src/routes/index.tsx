@@ -13,7 +13,9 @@ import {
 import { useState } from "react";
 import { Q } from "@/lib/queries";
 import { ToolCard } from "@/components/ToolCard";
+import { ToolCardSkeleton } from "@/components/ToolCardSkeleton";
 import { DynamicCategoryCard } from "@/components/DynamicCategoryCard";
+import { DynamicCategoryCardSkeleton } from "@/components/ToolCardSkeleton";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -45,18 +47,26 @@ function Home() {
   const featured = useQuery({
     queryKey: ["tools", "featured"],
     queryFn: async () => (await Q.tools({ featured: true, limit: 8 })).data ?? [],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
   const trending = useQuery({
     queryKey: ["tools", "trending"],
     queryFn: async () => (await Q.tools({ sort: "views", limit: 8 })).data ?? [],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
   const newest = useQuery({
     queryKey: ["tools", "newest"],
     queryFn: async () => (await Q.tools({ sort: "newest", limit: 8 })).data ?? [],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
   const capabilities = useQuery({
     queryKey: ["dynamic-categories"],
     queryFn: () => Q.dynamicCategories(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   return (
@@ -124,7 +134,7 @@ function Home() {
         href="/tools"
         hrefLabel="See all"
       >
-        <Grid items={featured.data} />
+        {featured.isLoading ? <GridSkeleton /> : <Grid items={featured.data} />}
       </Section>
 
       <Section
@@ -134,14 +144,16 @@ function Home() {
         hrefLabel="All categories"
       >
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {capabilities.data?.slice(0, 8).map((c) => (
-            <DynamicCategoryCard
-              key={c.capability}
-              name={c.capability}
-              count={c.tool_count}
-              type="capability"
-            />
-          ))}
+          {capabilities.isLoading
+            ? Array.from({ length: 4 }).map((_, i) => <DynamicCategoryCardSkeleton key={i} />)
+            : capabilities.data?.slice(0, 8).map((c) => (
+                <DynamicCategoryCard
+                  key={c.capability}
+                  name={c.capability}
+                  count={c.tool_count}
+                  type="capability"
+                />
+              ))}
         </div>
       </Section>
 
@@ -152,7 +164,7 @@ function Home() {
         href="/tools"
         hrefLabel="See all"
       >
-        <Grid items={trending.data} />
+        {trending.isLoading ? <GridSkeleton /> : <Grid items={trending.data} />}
       </Section>
 
       <Section
@@ -162,7 +174,7 @@ function Home() {
         href="/tools"
         hrefLabel="See all"
       >
-        <Grid items={newest.data} />
+        {newest.isLoading ? <GridSkeleton /> : <Grid items={newest.data} />}
       </Section>
 
 
@@ -225,6 +237,16 @@ function Grid({ items }: { items: Awaited<ReturnType<typeof Q.tools>>["data"] | 
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items?.map((t) => (
         <ToolCard key={t.id} tool={t} />
+      ))}
+    </div>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <ToolCardSkeleton key={i} />
       ))}
     </div>
   );

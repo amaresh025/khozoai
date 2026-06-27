@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
@@ -17,6 +16,12 @@ import {
 import { toast } from "sonner";
 import { ToolEditor } from "@/components/admin/ToolEditor";
 import { useServerFn } from "@tanstack/react-start";
+import {
+  adminListTools,
+  adminToggleField,
+  adminDeleteTool,
+  adminSetStatus,
+} from "@/lib/admin.functions";
 import { classifyExistingTools } from "@/lib/classifyExistingTools";
 
 export const Route = createFileRoute("/admin/tools")({
@@ -32,19 +37,16 @@ function AdminToolsPage() {
   const [classifying, setClassifying] = useState(false);
 
   const classifyFn = useServerFn(classifyExistingTools);
+  const listToolsFn = useServerFn(adminListTools);
+  const toggleFn = useServerFn(adminToggleField);
+  const deleteFn = useServerFn(adminDeleteTool);
+  const setStatusFn = useServerFn(adminSetStatus);
 
   const tools = useQuery({
     queryKey: ["admin", "tools-list", status, search],
     queryFn: async () => {
-      let q = supabase
-        .from("tools")
-        .select("*, category:categories(name,slug)")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (status !== "all") q = q.eq("status", status as any);
-      if (search) q = q.ilike("name", `%${search}%`);
-      const { data } = await q;
-      return data ?? [];
+      const result = await listToolsFn({ data: { status, search } });
+      return result ?? [];
     },
   });
 
@@ -54,38 +56,33 @@ function AdminToolsPage() {
       field: "featured" | "verified" | "sponsored";
       value: boolean;
     }) => {
-      const { error } = await supabase
-        .from("tools")
-        .update({ [vars.field]: vars.value } as any)
-        .eq("id", vars.id);
-      if (error) throw error;
+      await toggleFn({ data: vars });
     },
-
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tools-list"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin"] });
+      qc.invalidateQueries({ queryKey: ["tools"] });
+    },
   });
 
   const setStatusMut = useMutation({
     mutationFn: async (vars: { id: string; status: string }) => {
-      const { error } = await supabase
-        .from("tools")
-        .update({ status: vars.status as any })
-        .eq("id", vars.id);
-      if (error) throw error;
+      await setStatusFn({ data: vars });
     },
     onSuccess: () => {
       toast.success("Status updated");
-      qc.invalidateQueries({ queryKey: ["admin", "tools-list"] });
+      qc.invalidateQueries({ queryKey: ["admin"] });
+      qc.invalidateQueries({ queryKey: ["tools"] });
     },
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tools").delete().eq("id", id);
-      if (error) throw error;
+      await deleteFn({ data: { id } });
     },
     onSuccess: () => {
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["admin"] });
+      qc.invalidateQueries({ queryKey: ["tools"] });
     },
   });
 
@@ -96,7 +93,8 @@ function AdminToolsPage() {
       toast.success(
         `Classified ${result.classified} tools, skipped ${result.skipped} (already classified)`,
       );
-      qc.invalidateQueries({ queryKey: ["admin", "tools-list"] });
+      qc.invalidateQueries({ queryKey: ["admin"] });
+      qc.invalidateQueries({ queryKey: ["tools"] });
     } catch (err: any) {
       toast.error(`Classification failed: ${err.message}`);
     } finally {
@@ -300,7 +298,8 @@ function AdminToolsPage() {
           toolId={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
-            qc.invalidateQueries({ queryKey: ["admin", "tools-list"] });
+            qc.invalidateQueries({ queryKey: ["admin"] });
+            qc.invalidateQueries({ queryKey: ["tools"] });
             setEditing(null);
           }}
         />

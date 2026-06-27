@@ -169,6 +169,8 @@ export const INDUSTRY_TAXONOMY = [
 ] as const;
 
 const baseToolSelect = "*, category:categories(*)";
+const baseToolSelectLight =
+  "id, name, slug, short_description, logo_url, pricing, featured, verified, views, category_id, category:categories(name)";
 
 export const Q = {
   categories: () => supabase.from("categories").select("*").order("sort_order"),
@@ -187,7 +189,8 @@ export const Q = {
     industries?: string[];
     useCases?: string[];
   }): Promise<{ data: Tool[] | null; error: any }> => {
-    let q = supabase.from("tools").select(baseToolSelect).eq("status", "approved");
+    const selectStr = opts?.search ? baseToolSelect : baseToolSelectLight;
+    let q = supabase.from("tools").select(selectStr).eq("status", "approved");
 
     if (opts?.categoryIds && opts.categoryIds.length > 0) {
       q = q.in("category_id", opts.categoryIds);
@@ -217,7 +220,7 @@ export const Q = {
       if (opts?.limit) q = q.limit(opts.limit);
 
       const res = await q;
-      return { data: res.data as Tool[] | null, error: res.error };
+      return { data: res.data as unknown as Tool[] | null, error: res.error };
     }
 
     const res = await q;
@@ -229,7 +232,7 @@ export const Q = {
     const searchKeywords = searchLower.split(/\s+/).filter(Boolean);
 
     if (searchKeywords.length === 0) {
-      let sorted = [...res.data] as Tool[];
+      let sorted = [...res.data] as unknown as Tool[];
       if (opts?.sort === "rating") sorted.sort((a, b) => b.rating - a.rating);
       else if (opts?.sort === "views") sorted.sort((a, b) => b.views - a.views);
       else

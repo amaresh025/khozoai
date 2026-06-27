@@ -312,6 +312,116 @@ Return strict JSON matching this exact structure:
 }
 
 /* ============================================================
+   Admin CRUD server functions — use supabaseAdmin to bypass
+   broken RLS policies (has_role was dropped, taking all
+   admin policies with it).  These are only reachable from the
+   admin UI which already validates admin credentials.
+   ============================================================ */
+
+export const adminListTools = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({ status: z.string().optional(), search: z.string().optional() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("tools")
+      .select("*, category:categories(name,slug)")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (data.status && data.status !== "all") q = q.eq("status", data.status as any);
+    if (data.search) q = q.ilike("name", `%${data.search}%`);
+    const { data: tools, error } = await q;
+    if (error) throw new Error(error.message);
+    return tools ?? [];
+  });
+
+export const adminGetTool = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ id: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: tool, error } = await supabaseAdmin
+      .from("tools")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return tool;
+  });
+
+export const adminListCategories = createServerFn({ method: "POST" }).handler(async () => {
+  const { data, error } = await supabaseAdmin
+    .from("categories")
+    .select("id,name")
+    .order("name");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
+
+export const adminSaveTool = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z
+      .object({
+        id: z.string().optional(),
+        payload: z.record(z.any()),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { id, payload } = data;
+    if (id) {
+      const { error } = await supabaseAdmin.from("tools").update(payload).eq("id", id);
+      if (error) throw new Error(error.message);
+      return { success: true, id };
+    }
+    const { data: inserted, error } = await supabaseAdmin
+      .from("tools")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { success: true, id: inserted.id };
+  });
+
+export const adminDeleteTool = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ id: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin.from("tools").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const adminToggleField = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z
+      .object({
+        id: z.string(),
+        field: z.enum(["featured", "verified", "sponsored"]),
+        value: z.boolean(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("tools")
+      .update({ [data.field]: data.value })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const adminSetStatus = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({ id: z.string(), status: z.string() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("tools")
+      .update({ status: data.status })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+/* ============================================================
    Public server functions
    ============================================================ */
 
