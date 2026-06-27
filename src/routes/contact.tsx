@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -18,22 +18,55 @@ export const Route = createFileRoute("/contact")({
 
 function Contact() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   return (
     <div className="mx-auto max-w-2xl px-4 py-16">
       <h1 className="font-display text-3xl sm:text-5xl font-bold">
         Get in <span className="text-gradient">touch</span>
       </h1>
       <p className="mt-2 text-muted-foreground">We typically reply within one business day.</p>
-      <p className="mt-2 text-sm flex items-center gap-2">
-        <Mail className="h-4 w-4" /> hello@aitoolshub.app
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">hello@aitoolshub.app</p>
 
       <form
         className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          setSent(true);
-          toast.success("Message sent — we'll be in touch.");
+          if (loading) return;
+
+          const form = e.currentTarget;
+          const formData = new FormData(form);
+
+          const name = String(formData.get("name") ?? "").trim();
+          const email = String(formData.get("email") ?? "").trim();
+          const subject = "Contact"; // form doesn't collect subject separately in current UI
+          const message = String(formData.get("message") ?? "").trim();
+
+          if (!name || !email || !message) {
+            toast.error("Please fill out all required fields.");
+            return;
+          }
+
+          setLoading(true);
+          try {
+            const { error } = await (supabase as any)
+              .from("contact_messages")
+              .insert({
+                name,
+                email,
+                subject,
+                message,
+              } as any);
+
+            if (error) throw error;
+
+            setSent(true);
+            toast.success("Message received — we'll be in touch.");
+            form.reset();
+          } catch {
+            toast.error("Failed to send message. Please try again.");
+          } finally {
+            setLoading(false);
+          }
         }}
       >
         <input
@@ -51,6 +84,13 @@ function Contact() {
           maxLength={255}
           className="w-full h-11 rounded-lg bg-secondary/60 border border-border px-3 text-sm"
         />
+        <input
+          required
+          name="subject"
+          placeholder="Subject"
+          maxLength={160}
+          className="w-full h-11 rounded-lg bg-secondary/60 border border-border px-3 text-sm"
+        />
         <textarea
           required
           name="message"
@@ -59,8 +99,12 @@ function Contact() {
           maxLength={2000}
           className="w-full rounded-lg bg-secondary/60 border border-border p-3 text-sm"
         />
-        <Button type="submit" className="bg-gradient-brand text-white border-0" disabled={sent}>
-          {sent ? "Sent" : "Send message"}
+        <Button
+          type="submit"
+          className="bg-gradient-brand text-white border-0"
+          disabled={sent || loading}
+        >
+          {sent ? "Sent" : loading ? "Sending..." : "Send message"}
         </Button>
       </form>
     </div>

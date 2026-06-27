@@ -29,6 +29,7 @@ import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminToolsRouteImport } from './routes/admin.tools'
 import { Route as AdminQualityRouteImport } from './routes/admin.quality'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
+import { Route as AdminContactMessagesRouteImport } from './routes/admin.contact-messages'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const TermsRoute = TermsRouteImport.update({
@@ -131,6 +132,11 @@ const AdminImportRoute = AdminImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContactMessagesRoute = AdminContactMessagesRouteImport.update({
+  id: '/contact-messages',
+  path: '/contact-messages',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/quality': typeof AdminQualityRoute
   '/admin/tools': typeof AdminToolsRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/quality': typeof AdminQualityRoute
   '/admin/tools': typeof AdminToolsRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/quality': typeof AdminQualityRoute
   '/admin/tools': typeof AdminToolsRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/admin/analytics'
+    | '/admin/contact-messages'
     | '/admin/import'
     | '/admin/quality'
     | '/admin/tools'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/admin/analytics'
+    | '/admin/contact-messages'
     | '/admin/import'
     | '/admin/quality'
     | '/admin/tools'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/admin/analytics'
+    | '/admin/contact-messages'
     | '/admin/import'
     | '/admin/quality'
     | '/admin/tools'
@@ -438,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contact-messages': {
+      id: '/admin/contact-messages'
+      path: '/contact-messages'
+      fullPath: '/admin/contact-messages'
+      preLoaderRoute: typeof AdminContactMessagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/analytics': {
       id: '/admin/analytics'
       path: '/analytics'
@@ -450,6 +469,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminContactMessagesRoute: typeof AdminContactMessagesRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminQualityRoute: typeof AdminQualityRoute
   AdminToolsRoute: typeof AdminToolsRoute
@@ -458,6 +478,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminContactMessagesRoute: AdminContactMessagesRoute,
   AdminImportRoute: AdminImportRoute,
   AdminQualityRoute: AdminQualityRoute,
   AdminToolsRoute: AdminToolsRoute,

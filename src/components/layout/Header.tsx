@@ -12,6 +12,7 @@ export function Header() {
     { to: "/tools", label: "Tools" },
     { to: "/categories", label: "Categories" },
     { to: "/compare", label: "Compare" },
+    { to: "/contact", label: "Contact" },
   ] as const;
 
   function onSubmit(e: React.FormEvent) {

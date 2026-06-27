@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ExternalLink,
-  Star,
   BadgeCheck,
   Share2,
   GitCompareArrows,
@@ -65,11 +64,6 @@ function ToolDetail() {
     enabled: !!tool.data?.id,
     queryKey: ["tool", slug, "features"],
     queryFn: async () => (await Q.toolFeatures(tool.data!.id)).data ?? [],
-  });
-  const reviews = useQuery({
-    enabled: !!tool.data?.id,
-    queryKey: ["tool", slug, "reviews"],
-    queryFn: async () => (await Q.reviews(tool.data!.id)).data ?? [],
   });
   const related = useQuery({
     enabled: !!tool.data?.category_id,
@@ -145,17 +139,6 @@ function ToolDetail() {
               priceCurrency: "USD",
               category: t.pricing,
             },
-            ...(t.review_count > 0
-              ? {
-                  aggregateRating: {
-                    "@type": "AggregateRating",
-                    ratingValue: Number(t.rating).toFixed(1),
-                    ratingCount: t.review_count,
-                    bestRating: "5",
-                    worstRating: "1",
-                  },
-                }
-              : {}),
           }),
         }}
       />
@@ -194,13 +177,6 @@ function ToolDetail() {
               </div>
               <p className="mt-2 text-base text-muted-foreground">{t.short_description}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <span className="inline-flex items-center gap-1 font-medium">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  {Number(t.rating).toFixed(1)}
-                  <span className="font-normal text-muted-foreground">
-                    ({t.review_count} reviews)
-                  </span>
-                </span>
                 {t.category && (
                   <Link
                     to="/category/$slug"
@@ -402,8 +378,6 @@ function ToolDetail() {
               )}
             </section>
           ) : null}
-
-          <ReviewsSection toolId={t.id} reviews={reviews.data ?? []} />
         </div>
 
         <aside className="space-y-5">
@@ -485,38 +459,3 @@ function InfoBlock({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function ReviewsSection({
-  reviews,
-}: {
-  toolId: string;
-  reviews: {
-    id: string;
-    rating: number;
-    title: string | null;
-    body: string | null;
-    created_at: string;
-  }[];
-}) {
-  return (
-    <section>
-      <h2 className="font-display text-xl font-bold tracking-tight">Reviews</h2>
-      <div className="mt-6 space-y-4">
-        {reviews.length === 0 && <p className="text-sm text-muted-foreground">No reviews yet.</p>}
-        {reviews.map((r) => (
-          <div key={r.id} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2">
-              {Array.from({ length: r.rating }).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-              ))}
-              <span className="ml-auto text-xs text-muted-foreground">
-                {new Date(r.created_at).toLocaleDateString()}
-              </span>
-            </div>
-            {r.title && <div className="mt-2 font-semibold">{r.title}</div>}
-            {r.body && <p className="mt-1 text-sm text-muted-foreground">{r.body}</p>}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}

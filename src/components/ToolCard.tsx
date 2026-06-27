@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Star, BadgeCheck, Flame } from "lucide-react";
+import { BadgeCheck, Flame } from "lucide-react";
 import type { Tool } from "@/lib/queries";
 
 const pricingLabels: Record<string, string> = {
@@ -46,8 +46,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1 text-xs font-semibold tabular-nums">
-          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-          {Number(tool.rating).toFixed(1)}
+          {/* rating removed */}
         </div>
       </div>
 

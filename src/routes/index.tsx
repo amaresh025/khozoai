@@ -14,7 +14,6 @@ import { useState } from "react";
 import { Q } from "@/lib/queries";
 import { ToolCard } from "@/components/ToolCard";
 import { DynamicCategoryCard } from "@/components/DynamicCategoryCard";
-import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -54,10 +53,6 @@ function Home() {
   const newest = useQuery({
     queryKey: ["tools", "newest"],
     queryFn: async () => (await Q.tools({ sort: "newest", limit: 8 })).data ?? [],
-  });
-  const topRated = useQuery({
-    queryKey: ["tools", "top-rated"],
-    queryFn: async () => (await Q.tools({ sort: "rating", limit: 8 })).data ?? [],
   });
   const capabilities = useQuery({
     queryKey: ["dynamic-categories"],
@@ -170,14 +165,6 @@ function Home() {
         <Grid items={newest.data} />
       </Section>
 
-      <Section
-        title="Top Rated"
-        subtitle="Loved by our community"
-        href="/tools"
-        hrefLabel="See all"
-      >
-        <Grid items={topRated.data} />
-      </Section>
 
       {/* CTA */}
       <section className="mx-auto mt-20 max-w-7xl px-4">
@@ -185,10 +172,7 @@ function Home() {
           <h2 className="font-display text-2xl font-bold sm:text-3xl">
             Get the best new AI tools weekly
           </h2>
-          <p className="mt-2 text-white/90">One concise email each Friday. Unsubscribe anytime.</p>
-          <div className="mt-6 flex justify-center">
-            <NewsletterSignup />
-          </div>
+          <p className="mt-2 text-white/90">Build, discover, and save the best AI tools.</p>
         </div>
       </section>
     </>
