@@ -36,6 +36,16 @@ export type Tool = {
   industries?: string[] | null;
   best_for?: string[] | null;
   not_good_for?: string[] | null;
+  source_url?: string | null;
+  import_source?: string | null;
+  ai_generated?: boolean;
+  ai_last_updated?: string | null;
+  last_verified?: string | null;
+  manually_edited?: boolean;
+  import_status?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_image?: string | null;
 };
 
 export type Category = {

@@ -360,7 +360,7 @@ export const adminGetTool = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: tool, error } = await supabaseAdmin
       .from("tools")
-      .select("*")
+      .select("*, tool_features(*), tool_tags(*)")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -387,18 +387,56 @@ export const adminSaveTool = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { id, payload } = data;
+    const { features, tags, ...toolPayload } = payload;
+
+    let targetId: string;
     if (id) {
-      const { error } = await supabaseAdmin.from("tools").update(payload as any).eq("id", id);
+      const { error } = await supabaseAdmin.from("tools").update(toolPayload as any).eq("id", id);
       if (error) throw new Error(error.message);
-      return { success: true, id };
+      targetId = id;
+    } else {
+      const { data: inserted, error } = await supabaseAdmin
+        .from("tools")
+        .insert(toolPayload as any)
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      targetId = inserted.id;
     }
-    const { data: inserted, error } = await supabaseAdmin
-      .from("tools")
-      .insert(payload as any)
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    return { success: true, id: inserted.id };
+
+    // Save features if provided
+    if (Array.isArray(features)) {
+      await supabaseAdmin.from("tool_features").delete().eq("tool_id", targetId);
+      if (features.length > 0) {
+        const { error } = await supabaseAdmin.from("tool_features").insert(
+          features.map((feature: string, idx: number) => ({
+            tool_id: targetId,
+            feature: feature.trim(),
+            sort_order: idx + 1,
+          })),
+        );
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    // Save tags if provided
+    if (Array.isArray(tags)) {
+      await supabaseAdmin.from("tool_tags").delete().eq("tool_id", targetId);
+      if (tags.length > 0) {
+        const uniqueTags = Array.from(new Set(tags.map((t: string) => t.trim().toLowerCase()).filter(Boolean)));
+        if (uniqueTags.length > 0) {
+          const { error } = await supabaseAdmin.from("tool_tags").insert(
+            uniqueTags.map((tag: string) => ({
+              tool_id: targetId,
+              tag,
+            })),
+          );
+          if (error) throw new Error(error.message);
+        }
+      }
+    }
+
+    return { success: true, id: targetId };
   });
 
 export const adminDeleteTool = createServerFn({ method: "POST" })
