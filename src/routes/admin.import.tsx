@@ -11,6 +11,9 @@ import {
   AlertTriangle,
   Loader2,
   Sparkles,
+  SkipForward,
+  RotateCw,
+  CircleX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,23 +24,163 @@ export const Route = createFileRoute("/admin/import")({
   component: ImportPage,
 });
 
-type ImportItem = { name: string; website_url: string };
+type ImportItem = {
+  name: string;
+  website_url: string;
+  short_description?: string;
+  full_description?: string;
+  pricing?: string;
+  pricing_details?: string;
+  category?: string;
+  tags?: string;
+  platforms?: string;
+  features?: string;
+  pros?: string;
+  cons?: string;
+  use_cases?: string;
+  capabilities?: string;
+  industries?: string;
+  best_for?: string;
+  not_good_for?: string;
+  logo_url?: string;
+  cover_url?: string;
+  affiliate_url?: string;
+  rating?: string;
+  status?: string;
+  featured?: string;
+  verified?: string;
+  sponsored?: string;
+  ai_model?: string;
+};
+
+const COLUMN_MAP: Record<string, keyof ImportItem> = {
+  name: "name",
+  title: "name",
+  tool_name: "name",
+  tool: "name",
+  website_url: "website_url",
+  url: "website_url",
+  website: "website_url",
+  site_url: "website_url",
+  link: "website_url",
+  short_description: "short_description",
+  description: "short_description",
+  summary: "short_description",
+  desc: "short_description",
+  full_description: "full_description",
+  long_description: "full_description",
+  pricing: "pricing",
+  price: "pricing",
+  price_model: "pricing",
+  pricing_details: "pricing_details",
+  category: "category",
+  categories: "category",
+  category_name: "category",
+  tags: "tags",
+  tag: "tags",
+  platforms: "platforms",
+  platform: "platforms",
+  features: "features",
+  feature: "features",
+  pros: "pros",
+  strengths: "pros",
+  cons: "cons",
+  weaknesses: "cons",
+  limitations: "cons",
+  use_cases: "use_cases",
+  use_case: "use_cases",
+  capabilities: "capabilities",
+  capability: "capabilities",
+  industries: "industries",
+  industry: "industries",
+  best_for: "best_for",
+  not_good_for: "not_good_for",
+  logo_url: "logo_url",
+  logo: "logo_url",
+  image_url: "logo_url",
+  cover_url: "cover_url",
+  cover: "cover_url",
+  affiliate_url: "affiliate_url",
+  rating: "rating",
+  status: "status",
+  featured: "featured",
+  verified: "verified",
+  sponsored: "sponsored",
+  ai_model: "ai_model",
+  model: "ai_model",
+};
+
+const ARRAY_FIELDS = new Set<keyof ImportItem>([
+  "tags", "platforms", "features", "pros", "cons",
+  "use_cases", "capabilities", "industries", "best_for", "not_good_for",
+]);
+
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
 
 function parseCsv(text: string): ImportItem[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
-  if (lines.length < 2) return [];
-  const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
-  const nameIdx = header.findIndex((h) => h === "name" || h === "title");
-  const urlIdx = header.findIndex((h) => h === "website_url" || h === "url" || h === "website");
-  if (nameIdx === -1 || urlIdx === -1)
-    throw new Error("CSV must contain 'name' and 'website_url' columns");
-  return lines
+  const lines = text.split(/\r?\n/);
+  const nonEmptyLines = lines.filter((l) => l.trim().length > 0);
+  if (nonEmptyLines.length < 2) return [];
+
+  const header = parseCsvLine(nonEmptyLines[0]).map((h) =>
+    h.toLowerCase().replace(/^"|"$/g, "").trim(),
+  );
+
+  const colIndexes: Record<string, number> = {};
+  header.forEach((col, idx) => {
+    const mapped = COLUMN_MAP[col];
+    if (mapped) {
+      colIndexes[mapped] = idx;
+    }
+  });
+
+  const nameIdx = colIndexes.name;
+  const urlIdx = colIndexes.website_url;
+  if (nameIdx === undefined || urlIdx === undefined) {
+    throw new Error(
+      "CSV must contain a column for tool name and website URL. " +
+        "Recognized names: name, title, tool_name, website_url, url, website",
+    );
+  }
+
+  return nonEmptyLines
     .slice(1)
     .map((line) => {
-      // naive CSV split — supports plain values, optionally quoted
-      const cols =
-        line.match(/("([^"]*)"|[^,]+)/g)?.map((c) => c.replace(/^"|"$/g, "").trim()) ?? [];
-      return { name: cols[nameIdx] ?? "", website_url: cols[urlIdx] ?? "" };
+      const cols = parseCsvLine(line);
+      const item: ImportItem = {
+        name: (cols[nameIdx] ?? "").trim(),
+        website_url: (cols[urlIdx] ?? "").trim(),
+      };
+      for (const [field, idx] of Object.entries(colIndexes)) {
+        if (field === "name" || field === "website_url") continue;
+        const val = (cols[idx] ?? "").trim();
+        if (val) {
+          (item as any)[field] = val;
+        }
+      }
+      return item;
     })
     .filter((r) => r.name && r.website_url);
 }
@@ -51,22 +194,45 @@ function parseJson(text: string): ImportItem[] {
       : Array.isArray(j.tools)
         ? j.tools
         : [];
-  return arr
-    .map((x: any) => ({
-      name: String(x.name ?? x.title ?? ""),
-      website_url: String(x.website_url ?? x.url ?? x.website ?? ""),
-    }))
-    .filter((r: ImportItem) => r.name && r.website_url);
+
+  const mapJsonKeys = (x: any): ImportItem => {
+    const item: ImportItem = {
+      name: "",
+      website_url: "",
+    };
+    for (const [csvName, field] of Object.entries(COLUMN_MAP)) {
+      const val = x[csvName] ?? x[csvName.replace(/_/g, "")] ?? undefined;
+      if (val !== undefined && val !== null && val !== "") {
+        if (field === "name") {
+          item.name = String(val);
+        } else if (field === "website_url") {
+          item.website_url = String(val);
+        } else {
+          (item as any)[field] = String(val);
+        }
+      }
+    }
+    return item;
+  };
+
+  return arr.map(mapJsonKeys).filter((r: ImportItem) => r.name && r.website_url);
 }
+
+type ResultItem = {
+  name: string;
+  url: string;
+  status: string;
+  message?: string;
+  slug?: string;
+};
 
 function ImportPage() {
   const [mode, setMode] = useState<"csv" | "json" | "url">("url");
   const [text, setText] = useState("");
   const [items, setItems] = useState<ImportItem[]>([]);
   const [enrich, setEnrich] = useState(true);
-  const [results, setResults] = useState<
-    { name: string; url: string; status: string; message?: string; slug?: string }[]
-  >([]);
+  const [force, setForce] = useState(false);
+  const [results, setResults] = useState<ResultItem[]>([]);
   const [singleUrl, setSingleUrl] = useState("");
   const [singleName, setSingleName] = useState("");
   const [preview, setPreview] = useState<any>(null);
@@ -77,14 +243,20 @@ function ImportPage() {
   const runImport = useMutation({
     mutationFn: async () => {
       if (!items.length) throw new Error("No items to import");
-      return importFn({ data: { items, enrich } });
+      return importFn({ data: { items, enrich, force } });
     },
     onSuccess: (r) => {
       setResults(r.results);
       const imported = r.results.filter((x: any) => x.status === "imported").length;
-      const dupes = r.results.filter((x: any) => x.status === "duplicate").length;
-      const errs = r.results.filter((x: any) => x.status === "error").length;
-      toast.success(`${imported} imported, ${dupes} duplicates, ${errs} errors`);
+      const updated = r.results.filter((x: any) => x.status === "updated").length;
+      const skipped = r.results.filter((x: any) => x.status === "skipped").length;
+      const failed = r.results.filter((x: any) => x.status === "error").length;
+      const parts: string[] = [];
+      if (imported) parts.push(`${imported} imported`);
+      if (updated) parts.push(`${updated} updated`);
+      if (skipped) parts.push(`${skipped} skipped`);
+      if (failed) parts.push(`${failed} failed`);
+      toast.success(parts.length ? parts.join(", ") : "No changes");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -101,6 +273,7 @@ function ImportPage() {
         data: {
           items: [{ name: singleName || preview?.name || "Untitled", website_url: singleUrl }],
           enrich,
+          force,
         },
       }),
     onSuccess: (r) => {
@@ -141,8 +314,8 @@ function ImportPage() {
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">Bulk Import</h1>
         <p className="mt-1 text-muted-foreground">
-          Upload CSV/JSON, paste data, or import a single URL. AI enrichment auto-detects category,
-          tags, descriptions, and pricing.
+          Upload CSV/JSON, paste data, or import a single URL. AI enrichment auto-detects
+          descriptions, categories, features, and pricing from the tool's website.
         </p>
       </header>
 
@@ -157,15 +330,26 @@ function ImportPage() {
           JSON
         </ModeButton>
 
-        <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={enrich}
-            onChange={(e) => setEnrich(e.target.checked)}
-            className="h-4 w-4 rounded border-border"
-          />
-          <Sparkles className="h-4 w-4 text-primary" /> AI auto-enrich
-        </label>
+        <div className="ml-auto flex items-center gap-4 text-sm">
+          <label className="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={enrich}
+              onChange={(e) => setEnrich(e.target.checked)}
+              className="h-4 w-4 rounded border-border"
+            />
+            <Sparkles className="h-4 w-4 text-primary" /> AI enrich
+          </label>
+          <label className="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={force}
+              onChange={(e) => setForce(e.target.checked)}
+              className="h-4 w-4 rounded border-border"
+            />
+            <RotateCw className="h-4 w-4 text-orange-500" /> Force update
+          </label>
+        </div>
       </div>
 
       {mode === "url" ? (
@@ -228,6 +412,7 @@ function ImportPage() {
                 <Field label="Short description">{preview.enriched?.short_description}</Field>
                 <Field label="Pricing">{preview.enriched?.pricing}</Field>
                 <Field label="Tags">{preview.enriched?.tags?.join(", ") || "—"}</Field>
+                <Field label="AI Model">{preview.enriched?.ai_model || "—"}</Field>
               </div>
             </div>
           )}
@@ -237,8 +422,8 @@ function ImportPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-medium">
               {mode === "csv"
-                ? "CSV — header row required: name,website_url"
-                : "JSON — array of { name, website_url }"}
+                ? "CSV — first row must be column headers"
+                : "JSON — array of objects"}
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-surface">
               <Upload className="h-4 w-4" /> Upload file
@@ -256,8 +441,8 @@ function ImportPage() {
             rows={10}
             placeholder={
               mode === "csv"
-                ? "name,website_url\nChatGPT,https://chat.openai.com"
-                : '[{"name":"ChatGPT","website_url":"https://chat.openai.com"}]'
+                ? 'name,website_url,description,pricing,tags,platforms\nChatGPT,https://chat.openai.com,AI chatbot for conversations,Freemium,chatbot,Web'
+                : '[{"name":"ChatGPT","website_url":"https://chat.openai.com","pricing":"freemium","tags":"chatbot"}]'
             }
             className="w-full rounded-md border border-border bg-background p-3 font-mono text-xs"
           />
@@ -295,13 +480,25 @@ function ImportPage() {
                   <tr>
                     <th className="px-4 py-2 text-left">Name</th>
                     <th className="px-4 py-2 text-left">URL</th>
+                    <th className="px-4 py-2 text-left">Description</th>
+                    <th className="px-4 py-2 text-left">Pricing</th>
+                    <th className="px-4 py-2 text-left">Tags</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((it, i) => (
                     <tr key={i} className="border-t border-border">
                       <td className="px-4 py-2 font-medium">{it.name}</td>
-                      <td className="px-4 py-2 truncate text-muted-foreground">{it.website_url}</td>
+                      <td className="max-w-[200px] truncate px-4 py-2 text-muted-foreground">
+                        {it.website_url}
+                      </td>
+                      <td className="max-w-[250px] truncate px-4 py-2 text-muted-foreground">
+                        {it.short_description || "—"}
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">{it.pricing || "—"}</td>
+                      <td className="max-w-[150px] truncate px-4 py-2 text-muted-foreground">
+                        {it.tags || "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -314,6 +511,38 @@ function ImportPage() {
       {results.length > 0 && (
         <section>
           <h2 className="mb-3 font-display text-lg font-bold tracking-tight">Results</h2>
+          <div className="mb-3 flex flex-wrap gap-3 text-sm">
+            {(() => {
+              const imported = results.filter((r) => r.status === "imported").length;
+              const updated = results.filter((r) => r.status === "updated").length;
+              const skipped = results.filter((r) => r.status === "skipped").length;
+              const failed = results.filter((r) => r.status === "error").length;
+              return (
+                <>
+                  {imported > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {imported} imported
+                    </span>
+                  )}
+                  {updated > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700">
+                      <RotateCw className="h-3.5 w-3.5" /> {updated} updated
+                    </span>
+                  )}
+                  {skipped > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
+                      <SkipForward className="h-3.5 w-3.5" /> {skipped} skipped
+                    </span>
+                  )}
+                  {failed > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700">
+                      <CircleX className="h-3.5 w-3.5" /> {failed} failed
+                    </span>
+                  )}
+                </>
+              );
+            })()}
+          </div>
           <div className="space-y-2">
             {results.map((r, i) => (
               <div
@@ -321,17 +550,21 @@ function ImportPage() {
                 className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
                   r.status === "imported"
                     ? "border-emerald-200 bg-emerald-50"
-                    : r.status === "duplicate"
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-rose-200 bg-rose-50"
+                    : r.status === "updated"
+                      ? "border-blue-200 bg-blue-50"
+                      : r.status === "skipped"
+                        ? "border-amber-200 bg-amber-50"
+                        : "border-rose-200 bg-rose-50"
                 }`}
               >
                 {r.status === "imported" ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                ) : r.status === "updated" ? (
+                  <RotateCw className="h-4 w-4 text-blue-600" />
+                ) : r.status === "skipped" ? (
+                  <SkipForward className="h-4 w-4 text-amber-600" />
                 ) : (
-                  <AlertTriangle
-                    className={`h-4 w-4 ${r.status === "duplicate" ? "text-amber-600" : "text-rose-600"}`}
-                  />
+                  <CircleX className="h-4 w-4 text-rose-600" />
                 )}
                 <span className="font-medium">{r.name}</span>
                 <span className="truncate text-muted-foreground">{r.url}</span>
