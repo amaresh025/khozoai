@@ -22,7 +22,6 @@ import {
   adminDeleteTool,
   adminSetStatus,
 } from "@/lib/admin.functions";
-import { classifyExistingTools } from "@/lib/classifyExistingTools";
 
 export const Route = createFileRoute("/admin/tools")({
   head: () => ({ meta: [{ title: "Tools — Admin" }] }),
@@ -34,9 +33,7 @@ function AdminToolsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [editing, setEditing] = useState<string | "new" | null>(null);
-  const [classifying, setClassifying] = useState(false);
 
-  const classifyFn = useServerFn(classifyExistingTools);
   const listToolsFn = useServerFn(adminListTools);
   const toggleFn = useServerFn(adminToggleField);
   const deleteFn = useServerFn(adminDeleteTool);
@@ -86,22 +83,6 @@ function AdminToolsPage() {
     },
   });
 
-  const handleClassify = async () => {
-    setClassifying(true);
-    try {
-      const result = await classifyFn({});
-      toast.success(
-        `Classified ${result.classified} tools, skipped ${result.skipped} (already classified)`,
-      );
-      qc.invalidateQueries({ queryKey: ["admin"] });
-      qc.invalidateQueries({ queryKey: ["tools"] });
-    } catch (err: any) {
-      toast.error(`Classification failed: ${err.message}`);
-    } finally {
-      setClassifying(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -112,14 +93,6 @@ function AdminToolsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleClassify} disabled={classifying}>
-            {classifying ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-1 h-4 w-4" />
-            )}
-            Classify Existing
-          </Button>
           <Button onClick={() => setEditing("new")}>
             <Plus className="mr-1 h-4 w-4" /> New tool
           </Button>
