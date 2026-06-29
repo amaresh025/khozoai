@@ -134,7 +134,7 @@ export const USE_CASE_TAXONOMY = [
 
 const baseToolSelect = "*";
 const baseToolSelectLight =
-  "id, tool_name, website_url, tagline, short_description, logo_url, pricing, featured, category";
+  "id, tool_name, website_url, tagline, short_description, logo_url, pricing, featured, category, slug, is_published";
 
 export const Q = {
   categories: () => supabase.from("categories").select("*").order("sort_order"),
