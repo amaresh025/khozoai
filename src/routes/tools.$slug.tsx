@@ -106,51 +106,49 @@ function ToolDetail() {
       />
 
       {/* Header card */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:gap-6">
-          <div className="flex min-w-0 items-start gap-4">
-            <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface sm:h-20 sm:w-20">
-              {t.logo_url ? (
-                <img
-                  src={t.logo_url}
-                  alt=""
-                  className="h-full w-full object-contain bg-background"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
-              ) : (
-                <span className="font-display text-2xl font-bold text-foreground/60">
-                  {t.tool_name[0]}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 md:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface sm:h-20 sm:w-20">
+            {t.logo_url ? (
+              <img
+                src={t.logo_url}
+                alt=""
+                className="h-full w-full object-contain bg-background"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            ) : (
+              <span className="font-display text-2xl font-bold text-foreground/60">
+                {t.tool_name[0]}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                {t.tool_name}
+              </h1>
+              {t.featured && (
+                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Featured
                 </span>
               )}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                  {t.tool_name}
-                </h1>
-                {t.featured && (
-                  <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                    Featured
-                  </span>
-                )}
-              </div>
-              {t.tagline && <p className="mt-1 text-sm text-foreground/80 font-medium italic">{t.tagline}</p>}
-              <p className="mt-2 text-base text-muted-foreground">{t.short_description}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                {t.category && (
-                  <Link
-                    to="/tools"
-                    search={{ category: t.category }}
-                    className="text-muted-foreground hover:text-primary font-medium"
-                  >
-                    {t.category}
-                  </Link>
-                )}
-                <span className="capitalize text-muted-foreground">{t.pricing}</span>
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <Globe className="h-3.5 w-3.5" /> {hostname}
-                </span>
-              </div>
+            {t.tagline && <p className="mt-1 text-sm text-foreground/80 font-medium italic">{t.tagline}</p>}
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">{t.short_description}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+              {t.category && (
+                <Link
+                  to="/tools"
+                  search={{ category: t.category }}
+                  className="text-muted-foreground hover:text-primary font-medium"
+                >
+                  {t.category}
+                </Link>
+              )}
+              <span className="capitalize text-muted-foreground">{t.pricing}</span>
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <Globe className="h-3.5 w-3.5" /> {hostname}
+              </span>
             </div>
           </div>
         </div>
@@ -169,7 +167,7 @@ function ToolDetail() {
 
       {/* Hero Image / Cover Preview */}
       {t.hero_image_url && (
-        <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-muted aspect-[21/9] max-h-[380px] w-full">
+        <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-muted aspect-[16/9] sm:aspect-[21/9] max-h-[380px] w-full">
           <img
             src={t.hero_image_url}
             alt={`${t.tool_name} Cover`}
