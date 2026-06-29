@@ -79,7 +79,7 @@ function CategoryPage() {
   const toolsByCategory = useQuery({
     queryKey: ["tools", "category", cat.data?.id],
     enabled: !!cat.data?.id,
-    queryFn: async () => (await Q.tools({ categoryId: cat.data!.id })).data ?? [],
+    queryFn: async () => (await Q.tools({ category: cat.data!.name })).data ?? [],
   });
 
   const tools = isLegacyCategory ? toolsByCategory.data : toolsByCapability.data;

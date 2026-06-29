@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, Flame } from "lucide-react";
 import type { Tool } from "@/lib/queries";
 
 const pricingLabels: Record<string, string> = {
@@ -27,26 +26,22 @@ export function ToolCard({ tool }: { tool: Tool }) {
               width={44}
               height={44}
               loading="lazy"
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain bg-background"
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           ) : (
             <span className="font-display text-base font-semibold text-foreground/70">
-              {tool.name[0]}
+              {tool.tool_name[0]}
             </span>
           )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate font-semibold text-[15px] tracking-tight">{tool.name}</h3>
-            {tool.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-primary" />}
+            <h3 className="truncate font-semibold text-[15px] tracking-tight">{tool.tool_name}</h3>
           </div>
           {tool.category && (
-            <div className="truncate text-xs text-muted-foreground">{tool.category.name}</div>
+            <div className="truncate text-xs text-muted-foreground">{tool.category}</div>
           )}
-        </div>
-        <div className="flex shrink-0 items-center gap-1 text-xs font-semibold tabular-nums">
-          {/* rating removed */}
         </div>
       </div>
 
@@ -54,18 +49,12 @@ export function ToolCard({ tool }: { tool: Tool }) {
 
       <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
         <span className="rounded-md bg-surface px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-          {pricingLabels[tool.pricing] ?? tool.pricing}
+          {pricingLabels[tool.pricing || "free"] ?? tool.pricing}
         </span>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           {tool.featured && (
             <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
               Featured
-            </span>
-          )}
-          {tool.views > 500 && (
-            <span className="flex items-center gap-1">
-              <Flame className="h-3 w-3" />
-              {Intl.NumberFormat("en", { notation: "compact" }).format(tool.views)}
             </span>
           )}
         </div>

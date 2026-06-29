@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Search, X, Star } from "lucide-react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { z } from "zod";
 import { Q } from "@/lib/queries";
 import type { Tool } from "@/lib/queries";
@@ -40,15 +40,15 @@ function ComparePage() {
   const [a, setA] = useState<Tool | null>(null);
   const [b, setB] = useState<Tool | null>(null);
 
-  // Pre-select from ?a=slug&b=slug
+  // Pre-select from ?a=id&b=id
   useEffect(() => {
     if (!tools.data) return;
     if (aSlugParam && !a) {
-      const found = tools.data.find((t) => t.slug === aSlugParam);
+      const found = tools.data.find((t) => t.id === aSlugParam || t.slug === aSlugParam);
       if (found) setA(found);
     }
     if (bSlugParam && !b) {
-      const found = tools.data.find((t) => t.slug === bSlugParam);
+      const found = tools.data.find((t) => t.id === bSlugParam || t.slug === bSlugParam);
       if (found) setB(found);
     }
   }, [tools.data, aSlugParam, bSlugParam, a, b]);
@@ -155,9 +155,9 @@ function ToolPicker({
     return pool
       .filter(
         (t) =>
-          t.name.toLowerCase().includes(q) ||
+          t.tool_name.toLowerCase().includes(q) ||
           t.short_description?.toLowerCase().includes(q) ||
-          t.category?.name.toLowerCase().includes(q),
+          t.category?.toLowerCase().includes(q),
       )
       .slice(0, 10);
   }, [tools, query, excludeId]);
@@ -167,15 +167,15 @@ function ToolPicker({
       <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 h-12">
         <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded border border-border bg-surface">
           {value.logo_url ? (
-            <img src={value.logo_url} alt="" className="h-full w-full object-contain" />
+            <img src={value.logo_url} alt="" className="h-full w-full object-contain bg-background" />
           ) : (
-            <span className="text-xs font-bold">{value.name[0]}</span>
+            <span className="text-xs font-bold">{value.tool_name[0]}</span>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">{value.name}</div>
+          <div className="truncate text-sm font-medium">{value.tool_name}</div>
           {value.category && (
-            <div className="truncate text-xs text-muted-foreground">{value.category.name}</div>
+            <div className="truncate text-xs text-muted-foreground">{value.category}</div>
           )}
         </div>
         <button
@@ -218,15 +218,15 @@ function ToolPicker({
             >
               <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded border border-border bg-surface">
                 {t.logo_url ? (
-                  <img src={t.logo_url} alt="" className="h-full w-full object-contain" />
+                  <img src={t.logo_url} alt="" className="h-full w-full object-contain bg-background" />
                 ) : (
-                  <span className="text-xs font-bold">{t.name[0]}</span>
+                  <span className="text-xs font-bold">{t.tool_name[0]}</span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{t.name}</div>
+                <div className="truncate text-sm font-medium">{t.tool_name}</div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {t.category?.name ?? "—"}
+                  {t.category ?? "—"}
                 </div>
               </div>
               <div className="flex shrink-0 items-center">

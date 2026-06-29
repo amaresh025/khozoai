@@ -8,7 +8,6 @@ import {
   FileJson,
   FileSpreadsheet,
   CheckCircle2,
-  AlertTriangle,
   Loader2,
   Sparkles,
   SkipForward,
@@ -25,94 +24,89 @@ export const Route = createFileRoute("/admin/import")({
 });
 
 type ImportItem = {
-  name: string;
+  tool_name: string;
   website_url: string;
-  short_description?: string;
+  tagline?: string;
+  short_description: string;
   full_description?: string;
+  category: string;
+  sub_category?: string[];
   pricing?: string;
   pricing_details?: string;
-  category?: string;
-  tags?: string;
-  platforms?: string;
-  features?: string;
-  pros?: string;
-  cons?: string;
-  use_cases?: string;
-  capabilities?: string;
-  industries?: string;
-  best_for?: string;
-  not_good_for?: string;
+  free_plan?: boolean;
+  platforms?: string[];
+  features?: string[];
+  use_cases?: string[];
+  best_for?: string[];
+  capabilities?: string[];
+  integrations?: string[];
+  api_available?: boolean;
+  browser_extension?: boolean;
+  mobile_app?: boolean;
+  languages?: string[];
+  company_name?: string;
   logo_url?: string;
-  cover_url?: string;
-  affiliate_url?: string;
-  rating?: string;
-  status?: string;
-  featured?: string;
-  verified?: string;
-  sponsored?: string;
-  ai_model?: string;
+  hero_image_url?: string;
+  seo_title?: string;
+  seo_description?: string;
+  search_tags?: string[];
+  featured?: boolean;
 };
 
 const COLUMN_MAP: Record<string, keyof ImportItem> = {
-  name: "name",
-  title: "name",
-  tool_name: "name",
-  tool: "name",
+  tool_name: "tool_name",
+  name: "tool_name",
+  title: "tool_name",
+  tool: "tool_name",
   website_url: "website_url",
   url: "website_url",
   website: "website_url",
   site_url: "website_url",
   link: "website_url",
+  tagline: "tagline",
   short_description: "short_description",
   description: "short_description",
   summary: "short_description",
   desc: "short_description",
   full_description: "full_description",
   long_description: "full_description",
+  category: "category",
   pricing: "pricing",
   price: "pricing",
   price_model: "pricing",
   pricing_details: "pricing_details",
-  category: "category",
-  categories: "category",
-  category_name: "category",
-  tags: "tags",
-  tag: "tags",
+  free_plan: "free_plan",
   platforms: "platforms",
   platform: "platforms",
   features: "features",
   feature: "features",
-  pros: "pros",
-  strengths: "pros",
-  cons: "cons",
-  weaknesses: "cons",
-  limitations: "cons",
   use_cases: "use_cases",
   use_case: "use_cases",
+  best_for: "best_for",
   capabilities: "capabilities",
   capability: "capabilities",
-  industries: "industries",
-  industry: "industries",
-  best_for: "best_for",
-  not_good_for: "not_good_for",
+  integrations: "integrations",
+  api_available: "api_available",
+  browser_extension: "browser_extension",
+  mobile_app: "mobile_app",
+  languages: "languages",
+  company_name: "company_name",
+  company: "company_name",
   logo_url: "logo_url",
   logo: "logo_url",
-  image_url: "logo_url",
-  cover_url: "cover_url",
-  cover: "cover_url",
-  affiliate_url: "affiliate_url",
-  rating: "rating",
-  status: "status",
+  hero_image_url: "hero_image_url",
+  cover_url: "hero_image_url",
+  cover: "hero_image_url",
+  seo_title: "seo_title",
+  seo_description: "seo_description",
+  search_tags: "search_tags",
+  tags: "search_tags",
   featured: "featured",
-  verified: "verified",
-  sponsored: "sponsored",
-  ai_model: "ai_model",
-  model: "ai_model",
 };
 
 const ARRAY_FIELDS = new Set<keyof ImportItem>([
-  "tags", "platforms", "features", "pros", "cons",
-  "use_cases", "capabilities", "industries", "best_for", "not_good_for",
+  "sub_category", "platforms", "features", "use_cases", "best_for",
+  "capabilities", "integrations", "languages", "search_tags"
 ]);
 
 function parseCsvLine(line: string): string[] {
@@ -156,12 +150,12 @@ function parseCsv(text: string): ImportItem[] {
     }
   });
 
-  const nameIdx = colIndexes.name;
+  const nameIdx = colIndexes.tool_name;
   const urlIdx = colIndexes.website_url;
   if (nameIdx === undefined || urlIdx === undefined) {
     throw new Error(
-      "CSV must contain a column for tool name and website URL. " +
-        "Recognized names: name, title, tool_name, website_url, url, website",
+      "CSV must contain columns for name (tool_name) and website_url. " +
+        "Examples: name, tool_name, website_url, url, website",
     );
   }
 
@@ -170,19 +164,34 @@ function parseCsv(text: string): ImportItem[] {
     .map((line) => {
       const cols = parseCsvLine(line);
       const item: ImportItem = {
-        name: (cols[nameIdx] ?? "").trim(),
+        tool_name: (cols[nameIdx] ?? "").trim(),
         website_url: (cols[urlIdx] ?? "").trim(),
+        short_description: "",
+        category: "Other",
       };
       for (const [field, idx] of Object.entries(colIndexes)) {
-        if (field === "name" || field === "website_url") continue;
+        if (field === "tool_name" || field === "website_url") continue;
         const val = (cols[idx] ?? "").trim();
         if (val) {
-          (item as any)[field] = val;
+          if (ARRAY_FIELDS.has(field as any)) {
+            (item as any)[field] = val.split(/[;|]/).map((s) => s.trim()).filter(Boolean);
+          } else if (
+            field === "free_plan" ||
+            field === "api_available" ||
+            field === "browser_extension" ||
+            field === "mobile_app" ||
+            field === "featured"
+          ) {
+            const v = val.toLowerCase().trim();
+            (item as any)[field] = v === "true" || v === "1" || v === "yes";
+          } else {
+            (item as any)[field] = val;
+          }
         }
       }
       return item;
     })
-    .filter((r) => r.name && r.website_url);
+    .filter((r) => r.tool_name && r.website_url);
 }
 
 function parseJson(text: string): ImportItem[] {
@@ -197,16 +206,28 @@ function parseJson(text: string): ImportItem[] {
 
   const mapJsonKeys = (x: any): ImportItem => {
     const item: ImportItem = {
-      name: "",
+      tool_name: "",
       website_url: "",
+      short_description: "",
+      category: "Other",
     };
-    for (const [csvName, field] of Object.entries(COLUMN_MAP)) {
-      const val = x[csvName] ?? x[csvName.replace(/_/g, "")] ?? undefined;
+    for (const [rawKey, field] of Object.entries(COLUMN_MAP)) {
+      const val = x[rawKey] ?? x[rawKey.replace(/_/g, "")] ?? undefined;
       if (val !== undefined && val !== null && val !== "") {
-        if (field === "name") {
-          item.name = String(val);
-        } else if (field === "website_url") {
-          item.website_url = String(val);
+        if (ARRAY_FIELDS.has(field)) {
+          if (Array.isArray(val)) {
+            (item as any)[field] = val.map(String);
+          } else {
+            (item as any)[field] = String(val).split(/[;|]/).map((s) => s.trim()).filter(Boolean);
+          }
+        } else if (
+          field === "free_plan" ||
+          field === "api_available" ||
+          field === "browser_extension" ||
+          field === "mobile_app" ||
+          field === "featured"
+        ) {
+          (item as any)[field] = !!val;
         } else {
           (item as any)[field] = String(val);
         }
@@ -215,7 +236,7 @@ function parseJson(text: string): ImportItem[] {
     return item;
   };
 
-  return arr.map(mapJsonKeys).filter((r: ImportItem) => r.name && r.website_url);
+  return arr.map(mapJsonKeys).filter((r: ImportItem) => r.tool_name && r.website_url);
 }
 
 type ResultItem = {
@@ -223,7 +244,6 @@ type ResultItem = {
   url: string;
   status: string;
   message?: string;
-  slug?: string;
 };
 
 function ImportPage() {
@@ -271,14 +291,14 @@ function ImportPage() {
     mutationFn: async () =>
       importFn({
         data: {
-          items: [{ name: singleName || preview?.name || "Untitled", website_url: singleUrl }],
+          items: [{ tool_name: singleName || preview?.name || "Untitled", website_url: singleUrl, short_description: preview?.enriched?.short_description || "AI tool", category: preview?.enriched?.category || "Other" }],
           enrich,
           force,
         },
       }),
     onSuccess: (r) => {
       setResults(r.results);
-      toast.success("Imported");
+      toast.success("Imported successfully");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -359,13 +379,13 @@ function ImportPage() {
               value={singleName}
               onChange={(e) => setSingleName(e.target.value)}
               placeholder="Tool name (optional — autodetected)"
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+              className="h-10 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
             <input
               value={singleUrl}
               onChange={(e) => setSingleUrl(e.target.value)}
               placeholder="https://example.com"
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+              className="h-10 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -400,7 +420,7 @@ function ImportPage() {
                   <img
                     src={preview.meta.favicon}
                     alt=""
-                    className="h-8 w-8 rounded border border-border bg-background"
+                    className="h-8 w-8 rounded border border-border bg-background object-contain"
                   />
                 )}
                 <div className="min-w-0 flex-1">
@@ -410,9 +430,9 @@ function ImportPage() {
               </div>
               <div className="mt-3 grid gap-2 text-xs">
                 <Field label="Short description">{preview.enriched?.short_description}</Field>
+                <Field label="Category">{preview.enriched?.category}</Field>
                 <Field label="Pricing">{preview.enriched?.pricing}</Field>
-                <Field label="Tags">{preview.enriched?.tags?.join(", ") || "—"}</Field>
-                <Field label="AI Model">{preview.enriched?.ai_model || "—"}</Field>
+                <Field label="Search Tags">{preview.enriched?.search_tags?.join(", ") || "—"}</Field>
               </div>
             </div>
           )}
@@ -441,10 +461,10 @@ function ImportPage() {
             rows={10}
             placeholder={
               mode === "csv"
-                ? 'name,website_url,description,pricing,tags,platforms\nChatGPT,https://chat.openai.com,AI chatbot for conversations,Freemium,chatbot,Web'
-                : '[{"name":"ChatGPT","website_url":"https://chat.openai.com","pricing":"freemium","tags":"chatbot"}]'
+                ? 'tool_name,website_url,short_description,category,pricing,search_tags,platforms\nChatGPT,https://chat.openai.com,AI chatbot for conversations,AI Chatbot,freemium,chatbot;assistant,Web'
+                : '[{"tool_name":"ChatGPT","website_url":"https://chat.openai.com","short_description":"AI chatbot","category":"AI Chatbot","pricing":"freemium","search_tags":["chatbot"]}]'
             }
-            className="w-full rounded-md border border-border bg-background p-3 font-mono text-xs"
+            className="w-full rounded-md border border-border bg-background p-3 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={parseText}>
@@ -476,28 +496,28 @@ function ImportPage() {
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="max-h-72 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-surface text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="sticky top-0 bg-surface text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
                   <tr>
                     <th className="px-4 py-2 text-left">Name</th>
                     <th className="px-4 py-2 text-left">URL</th>
-                    <th className="px-4 py-2 text-left">Description</th>
+                    <th className="px-4 py-2 text-left">Category</th>
                     <th className="px-4 py-2 text-left">Pricing</th>
-                    <th className="px-4 py-2 text-left">Tags</th>
+                    <th className="px-4 py-2 text-left">Search Tags</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((it, i) => (
                     <tr key={i} className="border-t border-border">
-                      <td className="px-4 py-2 font-medium">{it.name}</td>
+                      <td className="px-4 py-2 font-medium">{it.tool_name}</td>
                       <td className="max-w-[200px] truncate px-4 py-2 text-muted-foreground">
                         {it.website_url}
                       </td>
-                      <td className="max-w-[250px] truncate px-4 py-2 text-muted-foreground">
-                        {it.short_description || "—"}
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {it.category || "Other"}
                       </td>
                       <td className="px-4 py-2 text-muted-foreground">{it.pricing || "—"}</td>
                       <td className="max-w-[150px] truncate px-4 py-2 text-muted-foreground">
-                        {it.tags || "—"}
+                        {it.search_tags?.join(", ") || "—"}
                       </td>
                     </tr>
                   ))}
@@ -595,7 +615,11 @@ function ModeButton({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${active ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground"}`}
+      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
+        active
+          ? "bg-primary/10 font-medium text-primary"
+          : "text-muted-foreground hover:bg-surface hover:text-foreground"
+      }`}
     >
       <Icon className="h-4 w-4" /> {children}
     </button>

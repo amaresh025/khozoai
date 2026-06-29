@@ -6,12 +6,9 @@ import {
   Plus,
   Search,
   Star,
-  BadgeCheck,
   Trash2,
   Pencil,
   Eye,
-  Sparkles,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolEditor } from "@/components/admin/ToolEditor";
@@ -20,7 +17,6 @@ import {
   adminListTools,
   adminToggleField,
   adminDeleteTool,
-  adminSetStatus,
 } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/tools")({
@@ -31,18 +27,16 @@ export const Route = createFileRoute("/admin/tools")({
 function AdminToolsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("all");
   const [editing, setEditing] = useState<string | "new" | null>(null);
 
   const listToolsFn = useServerFn(adminListTools);
   const toggleFn = useServerFn(adminToggleField);
   const deleteFn = useServerFn(adminDeleteTool);
-  const setStatusFn = useServerFn(adminSetStatus);
 
   const tools = useQuery({
-    queryKey: ["admin", "tools-list", status, search],
+    queryKey: ["admin", "tools-list", search],
     queryFn: async () => {
-      const result = await listToolsFn({ data: { status, search } });
+      const result = await listToolsFn({ data: { search } });
       return result ?? [];
     },
   });
@@ -50,7 +44,7 @@ function AdminToolsPage() {
   const toggle = useMutation({
     mutationFn: async (vars: {
       id: string;
-      field: "featured" | "verified" | "sponsored";
+      field: "featured" | "free_plan" | "api_available" | "browser_extension" | "mobile_app" | "is_published";
       value: boolean;
     }) => {
       await toggleFn({ data: vars });
@@ -61,23 +55,12 @@ function AdminToolsPage() {
     },
   });
 
-  const setStatusMut = useMutation({
-    mutationFn: async (vars: { id: string; status: string }) => {
-      await setStatusFn({ data: vars });
-    },
-    onSuccess: () => {
-      toast.success("Status updated");
-      qc.invalidateQueries({ queryKey: ["admin"] });
-      qc.invalidateQueries({ queryKey: ["tools"] });
-    },
-  });
-
   const del = useMutation({
     mutationFn: async (id: string) => {
       await deleteFn({ data: { id } });
     },
     onSuccess: () => {
-      toast.success("Deleted");
+      toast.success("Deleted successfully");
       qc.invalidateQueries({ queryKey: ["admin"] });
       qc.invalidateQueries({ queryKey: ["tools"] });
     },
@@ -89,7 +72,7 @@ function AdminToolsPage() {
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Tools</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create, edit, feature, verify, and publish tools.
+            Create, edit, and feature tools using the unified database schema.
           </p>
         </div>
         <div className="flex gap-2">
@@ -106,20 +89,9 @@ function AdminToolsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name…"
-            className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm"
+            className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-        >
-          <option value="all">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -128,11 +100,11 @@ function AdminToolsPage() {
             <thead className="bg-surface text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Name</th>
-                <th className="px-4 py-3 text-left font-semibold">Status</th>
+                <th className="px-4 py-3 text-left font-semibold">Category</th>
+                <th className="px-4 py-3 text-left font-semibold">Pricing</th>
                 <th className="px-4 py-3 text-left font-semibold">Capabilities</th>
-                <th className="px-4 py-3 text-left font-semibold">Flags</th>
-                <th className="px-4 py-3 text-right font-semibold">Rating</th>
-                <th className="px-4 py-3 text-right font-semibold">Views</th>
+                <th className="px-4 py-3 text-center font-semibold">Featured</th>
+                <th className="px-4 py-3 text-center font-semibold">Published</th>
                 <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
@@ -145,44 +117,24 @@ function AdminToolsPage() {
                         <img
                           src={t.logo_url}
                           alt=""
-                          className="h-6 w-6 rounded border border-border"
+                          className="h-6 w-6 rounded border border-border object-contain bg-background"
                           onError={(e) => (e.currentTarget.style.display = "none")}
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate font-medium">{t.name}</span>
-                          {t.needs_review && (
-                            <span className="rounded bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 shrink-0">
-                              Needs Review
-                            </span>
-                          )}
-                        </div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {t.category?.name ?? "—"}
-                        </div>
+                        <span className="truncate font-medium">{t.tool_name}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={t.status}
-                      onChange={(e) => setStatusMut.mutate({ id: t.id, status: e.target.value })}
-                      className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{t.category}</td>
+                  <td className="px-4 py-3 capitalize text-muted-foreground">{t.pricing}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {t.capabilities && t.capabilities.length > 0 ? (
                         t.capabilities.slice(0, 3).map((cap: string) => (
                           <span
                             key={cap}
-                            className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                            className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary border border-primary/10"
                           >
                             {cap}
                           </span>
@@ -197,53 +149,49 @@ function AdminToolsPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      <FlagBtn
-                        active={t.featured}
-                        onClick={() =>
-                          toggle.mutate({ id: t.id, field: "featured", value: !t.featured })
-                        }
-                        title="Featured"
-                      >
-                        <Star className="h-3.5 w-3.5" />
-                      </FlagBtn>
-                      <FlagBtn
-                        active={t.verified}
-                        onClick={() =>
-                          toggle.mutate({ id: t.id, field: "verified", value: !t.verified })
-                        }
-                        title="Verified"
-                      >
-                        <BadgeCheck className="h-3.5 w-3.5" />
-                      </FlagBtn>
-                    </div>
+                  <td className="px-4 py-3 text-center">
+                    <FlagBtn
+                      active={t.featured}
+                      onClick={() =>
+                        toggle.mutate({ id: t.id, field: "featured", value: !t.featured })
+                      }
+                      title="Featured"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                    </FlagBtn>
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {Number(t.rating).toFixed(1)}
+                  <td className="px-4 py-3 text-center">
+                    <FlagBtn
+                      active={t.is_published !== false}
+                      onClick={() =>
+                        toggle.mutate({ id: t.id, field: "is_published", value: !t.is_published })
+                      }
+                      title="Published"
+                    >
+                      <span className="text-[10px] font-bold uppercase">{t.is_published !== false ? "Yes" : "No"}</span>
+                    </FlagBtn>
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{t.views}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
                       <Link
                         to="/tools/$slug"
                         params={{ slug: t.slug }}
                         target="_blank"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface text-muted-foreground hover:text-foreground"
                         title="View"
                       >
                         <Eye className="h-4 w-4" />
                       </Link>
                       <button
                         onClick={() => setEditing(t.id)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface text-muted-foreground hover:text-foreground"
                         title="Edit"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm(`Delete "${t.name}"?`)) del.mutate(t.id);
+                          if (confirm(`Delete "${t.tool_name}"?`)) del.mutate(t.id);
                         }}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
                         title="Delete"
@@ -256,7 +204,7 @@ function AdminToolsPage() {
               ))}
               {tools.data?.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                     No tools found.
                   </td>
                 </tr>

@@ -2,50 +2,37 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Tool = {
   id: string;
-  name: string;
-  slug: string;
+  tool_name: string;
+  website_url: string;
+  tagline: string | null;
   short_description: string;
   full_description: string | null;
-  logo_url: string | null;
-  cover_url: string | null;
-  website_url: string;
-  affiliate_url: string | null;
-  pricing: string;
+  category: string;
+  sub_category: string[] | null;
+  pricing: string | null;
   pricing_details: string | null;
-  category_id: string | null;
-  rating: number;
-  review_count: number;
-  featured: boolean;
-  sponsored: boolean;
-  verified: boolean;
-  status: string;
-  views: number;
-  clicks: number;
-  pros: string[] | null;
-  cons: string[] | null;
+  free_plan: boolean | null;
   platforms: string[] | null;
-  published_at: string | null;
-  created_at: string;
-  category?: Category | null;
-  key_summary: string | null;
-  secondary_categories: string[] | null;
+  features: string[] | null;
   use_cases: string[] | null;
-  compare_data: Record<string, any> | null;
-  needs_review: boolean;
-  capabilities?: string[] | null;
-  industries?: string[] | null;
-  best_for?: string[] | null;
-  not_good_for?: string[] | null;
-  source_url?: string | null;
-  import_source?: string | null;
-  ai_generated?: boolean;
-  ai_last_updated?: string | null;
-  last_verified?: string | null;
-  manually_edited?: boolean;
-  import_status?: string | null;
-  seo_title?: string | null;
-  seo_description?: string | null;
-  seo_image?: string | null;
+  best_for: string[] | null;
+  capabilities: string[] | null;
+  integrations: string[] | null;
+  api_available: boolean | null;
+  browser_extension: boolean | null;
+  mobile_app: boolean | null;
+  languages: string[] | null;
+  company_name: string | null;
+  logo_url: string | null;
+  hero_image_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  search_tags: string[] | null;
+  featured: boolean | null;
+  created_at: string;
+  updated_at: string;
+  slug: string;
+  is_published: boolean;
 };
 
 export type Category = {
@@ -65,11 +52,6 @@ export type DynamicCategory = {
 
 export type DynamicUseCase = {
   use_case: string;
-  tool_count: number;
-};
-
-export type DynamicIndustry = {
-  industry: string;
   tool_count: number;
 };
 
@@ -150,83 +132,45 @@ export const USE_CASE_TAXONOMY = [
   "API Integration",
 ] as const;
 
-export const INDUSTRY_TAXONOMY = [
-  "Education",
-  "Finance",
-  "Healthcare",
-  "Legal",
-  "HR",
-  "Gaming",
-  "Cybersecurity",
-  "Ecommerce",
-  "Marketing",
-  "Real Estate",
-  "Media",
-  "Transportation",
-  "Manufacturing",
-  "Agriculture",
-  "Government",
-  "Nonprofit",
-  "Technology",
-  "Retail",
-  "Insurance",
-  "Telecommunications",
-  "Energy",
-  "Entertainment",
-  "Construction",
-  "Hospitality",
-  "Automotive",
-] as const;
-
-const baseToolSelect = "*, category:categories(*)";
+const baseToolSelect = "*";
 const baseToolSelectLight =
-  "id, name, slug, short_description, logo_url, pricing, featured, verified, views, category_id, category:categories(name)";
+  "id, tool_name, website_url, tagline, short_description, logo_url, pricing, featured, category";
 
 export const Q = {
   categories: () => supabase.from("categories").select("*").order("sort_order"),
   categoryBySlug: (slug: string) =>
     supabase.from("categories").select("*").eq("slug", slug).maybeSingle(),
   tools: async (opts?: {
-    categoryId?: string;
+    category?: string;
     categoryIds?: string[];
     featured?: boolean;
-    sponsored?: boolean;
-    sort?: "rating" | "views" | "newest";
     limit?: number;
     search?: string;
     pricing?: string;
     capabilities?: string[];
-    industries?: string[];
     useCases?: string[];
   }): Promise<{ data: Tool[] | null; error: any }> => {
     const selectStr = opts?.search ? baseToolSelect : baseToolSelectLight;
-    let q = supabase.from("tools").select(selectStr).eq("status", "approved");
+    let q = supabase.from("tools").select(selectStr).eq("is_published", true);
 
     if (opts?.categoryIds && opts.categoryIds.length > 0) {
-      q = q.in("category_id", opts.categoryIds);
-    } else if (opts?.categoryId) {
-      q = q.eq("category_id", opts.categoryId);
+      q = q.in("category", opts.categoryIds);
+    } else if (opts?.category) {
+      q = q.eq("category", opts.category);
     }
 
     if (opts?.featured) q = q.eq("featured", true);
-    if (opts?.sponsored) q = q.eq("sponsored", true);
-    if (opts?.pricing) q = q.eq("pricing", opts.pricing as any);
+    if (opts?.pricing) q = q.eq("pricing", opts.pricing);
 
     if (opts?.capabilities && opts.capabilities.length > 0) {
       q = q.overlaps("capabilities", opts.capabilities);
-    }
-    if (opts?.industries && opts.industries.length > 0) {
-      q = q.overlaps("industries", opts.industries);
     }
     if (opts?.useCases && opts.useCases.length > 0) {
       q = q.overlaps("use_cases", opts.useCases);
     }
 
     if (!opts?.search) {
-      if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
-      else if (opts?.sort === "views") q = q.order("views", { ascending: false });
-      else q = q.order("created_at", { ascending: false });
-
+      q = q.order("created_at", { ascending: false });
       if (opts?.limit) q = q.limit(opts.limit);
 
       const res = await q;
@@ -243,19 +187,18 @@ export const Q = {
 
     if (searchKeywords.length === 0) {
       let sorted = [...res.data] as unknown as Tool[];
-      if (opts?.sort === "rating") sorted.sort((a, b) => b.rating - a.rating);
-      else if (opts?.sort === "views") sorted.sort((a, b) => b.views - a.views);
-      else
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       if (opts?.limit) sorted = sorted.slice(0, opts.limit);
       return { data: sorted, error: null };
     }
 
     const scoredTools = res.data.map((tool: any) => {
       let score = 0;
-      const nameLower = (tool.name || "").toLowerCase();
+      const nameLower = (tool.tool_name || "").toLowerCase();
+      const taglineLower = (tool.tagline || "").toLowerCase();
       const shortDescLower = (tool.short_description || "").toLowerCase();
       const fullDescLower = (tool.full_description || "").toLowerCase();
+      const categoryLower = (tool.category || "").toLowerCase();
 
       if (nameLower === searchLower) {
         score += 1000;
@@ -283,22 +226,39 @@ export const Q = {
       });
       score += keywordNameMatches * 150;
 
-      if (shortDescLower.includes(searchLower) || fullDescLower.includes(searchLower)) {
+      if (taglineLower.includes(searchLower) || shortDescLower.includes(searchLower) || fullDescLower.includes(searchLower)) {
         score += 50;
       }
 
       let keywordDescMatches = 0;
       searchKeywords.forEach((keyword) => {
-        if (shortDescLower.includes(keyword) || fullDescLower.includes(keyword)) {
+        if (taglineLower.includes(keyword) || shortDescLower.includes(keyword) || fullDescLower.includes(keyword)) {
           keywordDescMatches += 1;
         }
       });
       score += keywordDescMatches * 20;
 
-      if (score > 0) {
-        score += (tool.rating || 0) * 5;
-        score += Math.min(tool.views || 0, 1000) * 0.1;
-      }
+      const arraysToSearch = [
+        tool.search_tags || [],
+        tool.sub_category || [],
+        tool.capabilities || []
+      ];
+      
+      arraysToSearch.forEach((arr) => {
+        arr.forEach((val: string) => {
+          const valLower = val.toLowerCase();
+          if (valLower === searchLower) {
+            score += 100;
+          } else if (valLower.includes(searchLower)) {
+            score += 30;
+          }
+          searchKeywords.forEach((kw) => {
+            if (valLower.includes(kw)) {
+              score += 10;
+            }
+          });
+        });
+      });
 
       return { tool: tool as Tool, score };
     });
@@ -308,12 +268,6 @@ export const Q = {
     filteredScored.sort((a, b) => {
       if (b.score !== a.score) {
         return b.score - a.score;
-      }
-      if (opts?.sort === "rating") {
-        return b.tool.rating - a.tool.rating;
-      }
-      if (opts?.sort === "views") {
-        return b.tool.views - a.tool.views;
       }
       return new Date(b.tool.created_at).getTime() - new Date(a.tool.created_at).getTime();
     });
@@ -327,51 +281,28 @@ export const Q = {
   },
   toolsByCapability: (
     capability: string,
-    opts?: { sort?: "rating" | "views" | "newest"; limit?: number },
+    opts?: { limit?: number },
   ) => {
     let q = supabase
       .from("tools")
       .select(baseToolSelect)
-      .eq("status", "approved")
-      .contains("capabilities", [capability]);
-
-    if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
-    else if (opts?.sort === "views") q = q.order("views", { ascending: false });
-    else q = q.order("created_at", { ascending: false });
+      .eq("is_published", true)
+      .contains("capabilities", [capability])
+      .order("created_at", { ascending: false });
 
     if (opts?.limit) q = q.limit(opts.limit);
     return q;
   },
   toolsByUseCase: (
     useCase: string,
-    opts?: { sort?: "rating" | "views" | "newest"; limit?: number },
+    opts?: { limit?: number },
   ) => {
     let q = supabase
       .from("tools")
       .select(baseToolSelect)
-      .eq("status", "approved")
-      .contains("use_cases", [useCase]);
-
-    if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
-    else if (opts?.sort === "views") q = q.order("views", { ascending: false });
-    else q = q.order("created_at", { ascending: false });
-
-    if (opts?.limit) q = q.limit(opts.limit);
-    return q;
-  },
-  toolsByIndustry: (
-    industry: string,
-    opts?: { sort?: "rating" | "views" | "newest"; limit?: number },
-  ) => {
-    let q = supabase
-      .from("tools")
-      .select(baseToolSelect)
-      .eq("status", "approved")
-      .contains("industries", [industry]);
-
-    if (opts?.sort === "rating") q = q.order("rating", { ascending: false });
-    else if (opts?.sort === "views") q = q.order("views", { ascending: false });
-    else q = q.order("created_at", { ascending: false });
+      .eq("is_published", true)
+      .contains("use_cases", [useCase])
+      .order("created_at", { ascending: false });
 
     if (opts?.limit) q = q.limit(opts.limit);
     return q;
@@ -384,17 +315,16 @@ export const Q = {
     const { data } = await supabase.rpc("dynamic_use_cases");
     return (data as DynamicUseCase[]) ?? [];
   },
-  dynamicIndustries: async (): Promise<DynamicIndustry[]> => {
-    const { data } = await supabase.rpc("dynamic_industries");
-    return (data as DynamicIndustry[]) ?? [];
+  toolBySlug: (slug: string) => {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    let q = supabase.from("tools").select("*");
+    if (isUuid) {
+      q = q.eq("id", slug);
+    } else {
+      q = q.eq("slug", slug);
+    }
+    return q.eq("is_published", true).maybeSingle();
   },
-  toolBySlug: (slug: string) =>
-    supabase.from("tools").select(baseToolSelect).eq("slug", slug).maybeSingle(),
-  toolFeatures: (toolId: string) =>
-    supabase.from("tool_features").select("*").eq("tool_id", toolId).order("sort_order"),
-  toolTags: (toolId: string) => supabase.from("tool_tags").select("*").eq("tool_id", toolId),
-  toolScreenshots: (toolId: string) =>
-    supabase.from("tool_screenshots").select("*").eq("tool_id", toolId).order("sort_order"),
   reviews: (toolId: string) =>
     supabase
       .from("reviews")

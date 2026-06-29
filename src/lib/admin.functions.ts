@@ -2,16 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 80);
-}
-
 function cleanHtmlToText(html: string): string {
   if (!html) return "";
   let clean = html
@@ -125,45 +115,36 @@ async function enrichWithAI(input: {
   rawTitle: string | null;
   rawDescription: string | null;
   bodyText?: string | null;
-  categories: { id: string; name: string }[];
 }) {
   const key = process.env.LOVABLE_API_KEY;
 
   const fallback = {
+    tagline: input.rawTitle ?? "",
     short_description: input.rawDescription?.slice(0, 120) ?? "",
     full_description: input.rawDescription ?? "",
-    key_summary: "",
-    category_id: null as string | null,
-    secondary_categories: [] as string[],
-    tags: [] as string[],
-    pricing: null as string | null,
+    category: "Other",
+    sub_category: [] as string[],
+    pricing: "freemium",
     pricing_details: null as string | null,
-    features: [] as string[],
-    pros: [] as string[],
-    cons: [] as string[],
+    free_plan: false,
     platforms: [] as string[],
+    features: [] as string[],
     use_cases: [] as string[],
-    capabilities: [] as string[],
-    industries: [] as string[],
     best_for: [] as string[],
-    not_good_for: [] as string[],
-    ai_model: null as string | null,
-    compare_data: {
-      coding_quality: "Basic",
-      writing_quality: "Basic",
-      research: "Basic",
-      image_generation: false,
-      video_generation: false,
-      voice: false,
-      web_search: false,
-      file_upload: false,
-      api: false,
-    },
+    capabilities: [] as string[],
+    integrations: [] as string[],
+    api_available: false,
+    browser_extension: false,
+    mobile_app: false,
+    languages: [] as string[],
+    company_name: input.name,
+    seo_title: input.rawTitle ?? input.name,
+    seo_description: input.rawDescription ?? "",
+    search_tags: [] as string[],
   };
 
   if (!key) return fallback;
 
-  const categoryList = input.categories.map((c) => `- ${c.id} :: ${c.name}`).join("\n");
   const prompt = `You are an editor for an AI tools directory. Summarize the website content into a clean, factual profile.
 
 Tool name: ${input.name}
@@ -173,60 +154,51 @@ Meta description: ${input.rawDescription ?? ""}
 Page content:
 ${input.bodyText ?? ""}
 
-Available categories (pick primary category_id, and secondary_categories IDs):
-${categoryList}
-
 CAPABILITIES (pick all that apply):
 AI Chatbot, AI Writing, AI Coding, AI Research, AI Search, AI Image Generation, AI Video Generation, AI Voice Generation, AI Music Generation, AI Automation, AI Productivity, AI Design, AI Data Analysis, AI Translation, AI Presentation Creation, AI Resume Building, AI 3D Modeling, AI Education, AI Email, AI SEO, AI Social Media, AI Security, AI Agent, AI Accessibility, AI Accounting, AI Legal, AI Healthcare, AI Customer Support, AI Sales, AI HR, AI Project Management
 
 USE CASES (pick all that apply):
 Blog Writing, SEO, Programming, Code Review, Studying, Marketing, Customer Support, Social Media, Sales, Research, Video Editing, Content Creation, Data Analysis, Design, Automation, Learning, Customer Service, Project Management, Resume Building, Email Management, Image Editing, Voice Over, Music Production, 3D Modeling, Translation, Transcription, Summarization, Copywriting, Ad Campaign, Market Research, Competitor Analysis, Lead Generation, Meeting Notes, Brainstorming, Document Processing, Data Entry, Scheduling, Personal Assistant, Web Scraping, API Integration
 
-INDUSTRIES (pick all that apply):
-Education, Finance, Healthcare, Legal, HR, Gaming, Cybersecurity, Ecommerce, Marketing, Real Estate, Media, Transportation, Manufacturing, Agriculture, Government, Nonprofit, Technology, Retail, Insurance, Telecommunications, Energy, Entertainment, Construction, Hospitality, Automotive
-
 Return ONLY valid JSON. No markdown. No explanations. Use these rules:
 
-- short_description: 60-120 words. One paragraph. Describe what the tool does factually. No marketing language, no hype words like "revolutionary", "cutting-edge", "game-changer". Write like a human editor would. Focus on features visible on the website.
-- full_description: 300-800 characters. Extended but still concise. No repeated sentences.
-- features: 4-8 specific features mentioned on the site. Short phrases. Not generic.
-- tags: 3-5 specific lowercase tags describing the tool. Avoid "ai", "tool".
+- short_description: 60-120 words. One paragraph. Describe what the tool does factually. No marketing language, no hype words like "revolutionary", "cutting-edge". Write like a human editor would.
+- full_description: 300-800 characters. Extended but still concise.
+- tagline: A brief 1-sentence tagline describing the tool.
+- features: 4-8 specific features mentioned on the site.
 - pricing: Set to observed pricing model ("free", "freemium", "paid", "subscription", "contact") or null if unknown.
 - pricing_details: Observed pricing info or null.
-- ai_model: Name of the AI model used (e.g. "GPT-4", "Claude 3", "Gemini") or null if not mentioned.
+- free_plan: boolean, whether there is any free plan/tier available.
 - platforms: Observed platforms from: Web, Windows, Mac, Android, iOS, API, Browser Extension, Desktop App.
-- Do not invent information. Leave fields empty or null if not found on the site.
+- sub_category: 1-3 sub-categories of the tool.
+- search_tags: 3-5 specific lowercase tags describing the tool.
+- api_available, browser_extension, mobile_app: booleans based on availability on site.
+- languages: Languages supported (e.g. ["English", "Spanish"] or empty).
+- company_name: Name of the company.
 
 {
+  "tagline": "Brief 1-sentence tagline",
   "short_description": "factual 60-120 word description",
   "full_description": "extended description 300-800 chars",
-  "key_summary": "2-3 sentence overview",
-  "category_id": "uuid or null",
-  "secondary_categories": ["uuid or empty"],
-  "tags": ["3-5 specific tags"],
+  "category": "Primary Category (e.g. AI Coding, AI Writing, AI Design)",
+  "sub_category": ["sub category 1", "sub category 2"],
   "pricing": "free|freemium|paid|subscription|contact",
   "pricing_details": "observed pricing or null",
-  "features": ["4-8 specific features"],
-  "pros": ["2-4 strengths"],
-  "cons": ["1-3 limitations or empty"],
-  "platforms": ["observed platforms"],
+  "free_plan": true|false,
+  "platforms": ["Web", "Mac"],
+  "features": ["Feature 1", "Feature 2"],
   "use_cases": ["all matching use cases"],
+  "best_for": ["user scenario 1", "user scenario 2"],
   "capabilities": ["all matching capabilities"],
-  "industries": ["all matching industries"],
-  "best_for": ["2-3 specific scenarios"],
-  "not_good_for": ["1-2 limitations or empty"],
-  "ai_model": "model name or null",
-  "compare_data": {
-    "coding_quality": "Excellent|Good|Basic",
-    "writing_quality": "Excellent|Good|Basic",
-    "research": "Excellent|Good|Basic",
-    "image_generation": true,
-    "video_generation": true,
-    "voice": true,
-    "web_search": true,
-    "file_upload": true,
-    "api": true
-  }
+  "integrations": ["GitHub", "Slack"],
+  "api_available": true|false,
+  "browser_extension": true|false,
+  "mobile_app": true|false,
+  "languages": ["English"],
+  "company_name": "company",
+  "seo_title": "SEO title",
+  "seo_description": "SEO description",
+  "search_tags": ["tag1", "tag2"]
 }`;
 
   try {
@@ -256,74 +228,28 @@ Return ONLY valid JSON. No markdown. No explanations. Use these rules:
     const parsed = JSON.parse(text);
 
     return {
+      tagline: String(parsed.tagline ?? "").slice(0, 200),
       short_description: String(parsed.short_description ?? "").slice(0, 500),
       full_description: String(parsed.full_description ?? "").slice(0, 3000),
-      key_summary: String(parsed.key_summary ?? "").slice(0, 1000),
-      category_id:
-        typeof parsed.category_id === "string" && parsed.category_id.length === 36
-          ? parsed.category_id
-          : null,
-      secondary_categories: Array.isArray(parsed.secondary_categories)
-        ? parsed.secondary_categories.filter((x: any) => typeof x === "string" && x.length === 36)
-        : [],
-      tags: Array.isArray(parsed.tags)
-        ? parsed.tags.slice(0, 8).map((t: any) => String(t).toLowerCase().slice(0, 32))
-        : [],
-      pricing: ["free", "freemium", "paid", "subscription", "contact"].includes(parsed.pricing)
-        ? parsed.pricing
-        : null,
+      category: String(parsed.category ?? "Other").slice(0, 100),
+      sub_category: Array.isArray(parsed.sub_category) ? parsed.sub_category.map(String) : [],
+      pricing: String(parsed.pricing ?? "freemium").slice(0, 50),
       pricing_details: parsed.pricing_details ? String(parsed.pricing_details).slice(0, 500) : null,
-      features: Array.isArray(parsed.features)
-        ? parsed.features.map((f: any) => String(f).slice(0, 100))
-        : [],
-      pros: Array.isArray(parsed.pros) ? parsed.pros.map((p: any) => String(p).slice(0, 200)) : [],
-      cons: Array.isArray(parsed.cons) ? parsed.cons.map((c: any) => String(c).slice(0, 200)) : [],
-      platforms: Array.isArray(parsed.platforms)
-        ? parsed.platforms.map((pl: any) => String(pl).slice(0, 100))
-        : [],
-      use_cases: Array.isArray(parsed.use_cases)
-        ? parsed.use_cases.map((uc: any) => String(uc).slice(0, 100))
-        : [],
-      capabilities: Array.isArray(parsed.capabilities)
-        ? parsed.capabilities.map((c: any) => String(c).slice(0, 60))
-        : [],
-      industries: Array.isArray(parsed.industries)
-        ? parsed.industries.map((i: any) => String(i).slice(0, 60))
-        : [],
-      best_for: Array.isArray(parsed.best_for)
-        ? parsed.best_for.map((b: any) => String(b).slice(0, 150))
-        : [],
-      not_good_for: Array.isArray(parsed.not_good_for)
-        ? parsed.not_good_for.map((n: any) => String(n).slice(0, 150))
-        : [],
-      ai_model: typeof parsed.ai_model === "string" && parsed.ai_model.trim()
-        ? parsed.ai_model.trim().slice(0, 100)
-        : null,
-      compare_data:
-        parsed.compare_data && typeof parsed.compare_data === "object"
-          ? {
-              coding_quality: ["Excellent", "Good", "Basic"].includes(
-                parsed.compare_data.coding_quality,
-              )
-                ? parsed.compare_data.coding_quality
-                : "Basic",
-              writing_quality: ["Excellent", "Good", "Basic"].includes(
-                parsed.compare_data.writing_quality,
-              )
-                ? parsed.compare_data.writing_quality
-                : "Basic",
-              research: ["Excellent", "Good", "Basic"].includes(parsed.compare_data.research)
-                ? parsed.compare_data.research
-                : "Basic",
-              image_generation: !!parsed.compare_data.image_generation,
-              video_generation: !!parsed.compare_data.video_generation,
-              voice: !!parsed.compare_data.voice,
-              web_search: !!parsed.compare_data.web_search,
-              file_upload: !!parsed.compare_data.file_upload,
-              api: !!parsed.compare_data.api,
-              ...(parsed.ai_model ? { ai_model: String(parsed.ai_model).slice(0, 100) } : {}),
-            }
-          : fallback.compare_data,
+      free_plan: !!parsed.free_plan,
+      platforms: Array.isArray(parsed.platforms) ? parsed.platforms.map(String) : [],
+      features: Array.isArray(parsed.features) ? parsed.features.map(String) : [],
+      use_cases: Array.isArray(parsed.use_cases) ? parsed.use_cases.map(String) : [],
+      best_for: Array.isArray(parsed.best_for) ? parsed.best_for.map(String) : [],
+      capabilities: Array.isArray(parsed.capabilities) ? parsed.capabilities.map(String) : [],
+      integrations: Array.isArray(parsed.integrations) ? parsed.integrations.map(String) : [],
+      api_available: !!parsed.api_available,
+      browser_extension: !!parsed.browser_extension,
+      mobile_app: !!parsed.mobile_app,
+      languages: Array.isArray(parsed.languages) ? parsed.languages.map(String) : [],
+      company_name: parsed.company_name ? String(parsed.company_name).slice(0, 200) : input.name,
+      seo_title: parsed.seo_title ? String(parsed.seo_title).slice(0, 200) : input.name,
+      seo_description: parsed.seo_description ? String(parsed.seo_description).slice(0, 500) : "",
+      search_tags: Array.isArray(parsed.search_tags) ? parsed.search_tags.map(String) : [],
     };
   } catch (e) {
     console.error("AI enrichment failed", e);
@@ -332,10 +258,7 @@ Return ONLY valid JSON. No markdown. No explanations. Use these rules:
 }
 
 /* ============================================================
-   Admin CRUD server functions — use supabaseAdmin to bypass
-   broken RLS policies (has_role was dropped, taking all
-   admin policies with it).  These are only reachable from the
-   admin UI which already validates admin credentials.
+   Admin CRUD server functions
    ============================================================ */
 
 export const adminListTools = createServerFn({ method: "POST" })
@@ -345,11 +268,10 @@ export const adminListTools = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     let q = supabaseAdmin
       .from("tools")
-      .select("*, category:categories(name,slug)")
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
-    if (data.status && data.status !== "all") q = q.eq("status", data.status as any);
-    if (data.search) q = q.ilike("name", `%${data.search}%`);
+    if (data.search) q = q.ilike("tool_name", `%${data.search}%`);
     const { data: tools, error } = await q;
     if (error) throw new Error(error.message);
     return tools ?? [];
@@ -360,21 +282,12 @@ export const adminGetTool = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: tool, error } = await supabaseAdmin
       .from("tools")
-      .select("*, tool_features(*), tool_tags(*)")
+      .select("*")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return tool;
   });
-
-export const adminListCategories = createServerFn({ method: "POST" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
-    .from("categories")
-    .select("id,name")
-    .order("name");
-  if (error) throw new Error(error.message);
-  return data ?? [];
-});
 
 export const adminSaveTool = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
@@ -387,53 +300,20 @@ export const adminSaveTool = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { id, payload } = data;
-    const { features, tags, ...toolPayload } = payload;
 
     let targetId: string;
     if (id) {
-      const { error } = await supabaseAdmin.from("tools").update(toolPayload as any).eq("id", id);
+      const { error } = await supabaseAdmin.from("tools").update(payload as any).eq("id", id);
       if (error) throw new Error(error.message);
       targetId = id;
     } else {
       const { data: inserted, error } = await supabaseAdmin
         .from("tools")
-        .insert(toolPayload as any)
+        .insert(payload as any)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
       targetId = inserted.id;
-    }
-
-    // Save features if provided
-    if (Array.isArray(features)) {
-      await supabaseAdmin.from("tool_features").delete().eq("tool_id", targetId);
-      if (features.length > 0) {
-        const { error } = await supabaseAdmin.from("tool_features").insert(
-          features.map((feature: string, idx: number) => ({
-            tool_id: targetId,
-            feature: feature.trim(),
-            sort_order: idx + 1,
-          })),
-        );
-        if (error) throw new Error(error.message);
-      }
-    }
-
-    // Save tags if provided
-    if (Array.isArray(tags)) {
-      await supabaseAdmin.from("tool_tags").delete().eq("tool_id", targetId);
-      if (tags.length > 0) {
-        const uniqueTags = Array.from(new Set(tags.map((t: string) => t.trim().toLowerCase()).filter(Boolean)));
-        if (uniqueTags.length > 0) {
-          const { error } = await supabaseAdmin.from("tool_tags").insert(
-            uniqueTags.map((tag: string) => ({
-              tool_id: targetId,
-              tag,
-            })),
-          );
-          if (error) throw new Error(error.message);
-        }
-      }
     }
 
     return { success: true, id: targetId };
@@ -452,7 +332,7 @@ export const adminToggleField = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string(),
-        field: z.enum(["featured", "verified", "sponsored"]),
+        field: z.enum(["featured", "free_plan", "api_available", "browser_extension", "mobile_app", "is_published"]),
         value: z.boolean(),
       })
       .parse(d),
@@ -466,181 +346,128 @@ export const adminToggleField = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const adminSetStatus = createServerFn({ method: "POST" })
-  .validator((d: unknown) =>
-    z.object({ id: z.string(), status: z.string() }).parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin
-      .from("tools")
-      .update({ status: data.status } as any)
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { success: true };
-  });
-
 /* ============================================================
    Public server functions
    ============================================================ */
 
 export const enrichUrl = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ url: z.string().url(), name: z.string().optional() }).parse(d))
+  .validator((d) => z.object({ url: z.string().url(), name: z.string().optional() }).parse(d))
   .handler(async ({ data }) => {
     const meta = await fetchSiteMetadata(data.url);
     const name = (data.name ?? meta.title ?? meta.hostname ?? "").trim();
-    const { data: cats } = await supabaseAdmin.from("categories").select("id,name");
     const enriched = await enrichWithAI({
       name,
       url: meta.url,
       rawTitle: meta.title,
       rawDescription: meta.description,
       bodyText: meta.bodyText,
-      categories: cats ?? [],
     });
     return { meta, name, enriched };
   });
 
 const importItemSchema = z.object({
-  name: z.string().min(1).max(200),
+  tool_name: z.string().min(1).max(200),
   website_url: z.string().url(),
-  short_description: z.string().max(500).optional(),
+  tagline: z.string().max(200).optional(),
+  short_description: z.string().min(1).max(500),
   full_description: z.string().max(3000).optional(),
+  category: z.string().min(1).max(100),
+  sub_category: z.array(z.string()).optional(),
   pricing: z.string().max(50).optional(),
   pricing_details: z.string().max(500).optional(),
-  category: z.string().max(200).optional(),
-  tags: z.string().max(1000).optional(),
-  platforms: z.string().max(500).optional(),
-  features: z.string().max(2000).optional(),
-  pros: z.string().max(2000).optional(),
-  cons: z.string().max(2000).optional(),
-  use_cases: z.string().max(1000).optional(),
-  capabilities: z.string().max(1000).optional(),
-  industries: z.string().max(1000).optional(),
-  best_for: z.string().max(1000).optional(),
-  not_good_for: z.string().max(1000).optional(),
+  free_plan: z.boolean().optional(),
+  platforms: z.array(z.string()).optional(),
+  features: z.array(z.string()).optional(),
+  use_cases: z.array(z.string()).optional(),
+  best_for: z.array(z.string()).optional(),
+  capabilities: z.array(z.string()).optional(),
+  integrations: z.array(z.string()).optional(),
+  api_available: z.boolean().optional(),
+  browser_extension: z.boolean().optional(),
+  mobile_app: z.boolean().optional(),
+  languages: z.array(z.string()).optional(),
+  company_name: z.string().max(200).optional(),
   logo_url: z.string().max(500).optional(),
-  cover_url: z.string().max(500).optional(),
-  affiliate_url: z.string().max(500).optional(),
-  rating: z.string().max(10).optional(),
-  status: z.string().max(20).optional(),
-  featured: z.string().max(10).optional(),
-  verified: z.string().max(10).optional(),
-  sponsored: z.string().max(10).optional(),
-  ai_model: z.string().max(100).optional(),
+  hero_image_url: z.string().max(500).optional(),
+  seo_title: z.string().max(200).optional(),
+  seo_description: z.string().max(500).optional(),
+  search_tags: z.array(z.string()).optional(),
+  featured: z.boolean().optional(),
+  slug: z.string().optional(),
+  is_published: z.boolean().optional(),
 });
 
 function buildToolPayload(
-  item: z.infer<typeof importItemSchema>,
+  item: z.infer<typeof importItemSchema> & Record<string, any>,
   meta: Awaited<ReturnType<typeof fetchSiteMetadata>>,
   enriched: Awaited<ReturnType<typeof enrichWithAI>>,
-  categoryNameToId: Record<string, string>,
 ) {
-  const slug = slugify(item.name);
-
-  const parseBool = (val: string | undefined): boolean | undefined => {
-    if (!val) return undefined;
-    const v = val.toLowerCase().trim();
-    if (v === "true" || v === "1" || v === "yes") return true;
-    if (v === "false" || v === "0" || v === "no") return false;
-    return undefined;
-  };
-
-  const category_id = item.category
-    ? (categoryNameToId[item.category.toLowerCase().trim()] ?? enriched.category_id)
-    : enriched.category_id;
-
-  const csvFeatures = item.features ? splitCsvValue(item.features) : null;
-  const csvPros = item.pros ? splitCsvValue(item.pros) : null;
-  const csvCons = item.cons ? splitCsvValue(item.cons) : null;
-  const csvTags = item.tags ? splitCsvValue(item.tags) : null;
-  const csvPlatforms = item.platforms ? splitCsvValue(item.platforms) : null;
-  const csvUseCases = item.use_cases ? splitCsvValue(item.use_cases) : null;
-  const csvCapabilities = item.capabilities ? splitCsvValue(item.capabilities) : null;
-  const csvIndustries = item.industries ? splitCsvValue(item.industries) : null;
-  const csvBestFor = item.best_for ? splitCsvValue(item.best_for) : null;
-  const csvNotGoodFor = item.not_good_for ? splitCsvValue(item.not_good_for) : null;
-
-  const featuresList: string[] = csvFeatures || enriched.features;
-  const tagsList: string[] = csvTags || enriched.tags;
-
   const toolData: Record<string, any> = {
-    name: item.name,
-    slug,
-    short_description:
-      item.short_description ||
-      enriched.short_description ||
-      `${item.name} — AI tool`,
-    full_description: item.full_description || enriched.full_description || null,
-    key_summary: enriched.key_summary || null,
+    tool_name: item.tool_name || item.name || enriched.company_name,
     website_url: meta.url,
-    logo_url: item.logo_url || meta.favicon || null,
-    cover_url: item.cover_url || (meta as any).ogImage || null,
-    affiliate_url: item.affiliate_url || null,
+    tagline: item.tagline || enriched.tagline || meta.title || null,
+    short_description: item.short_description || enriched.short_description || `${item.tool_name} — AI tool`,
+    full_description: item.full_description || enriched.full_description || null,
+    category: item.category || enriched.category || "Other",
+    sub_category: item.sub_category || enriched.sub_category || [],
     pricing: item.pricing || enriched.pricing || "freemium",
     pricing_details: item.pricing_details || enriched.pricing_details || null,
-    category_id: category_id || null,
-    secondary_categories: enriched.secondary_categories,
-    pros: csvPros || enriched.pros,
-    cons: csvCons || enriched.cons,
-    platforms: csvPlatforms || enriched.platforms,
-    use_cases: csvUseCases || enriched.use_cases,
-    capabilities: csvCapabilities || enriched.capabilities,
-    industries: csvIndustries || enriched.industries,
-    best_for: csvBestFor || enriched.best_for,
-    not_good_for: csvNotGoodFor || enriched.not_good_for,
-    compare_data: {
-      ...enriched.compare_data,
-      ...(item.ai_model ? { ai_model: item.ai_model } : {}),
-      ...(enriched.ai_model && !item.ai_model ? { ai_model: enriched.ai_model } : {}),
-    },
-    rating: item.rating ? parseFloat(item.rating) || 0 : 0,
-    status: (item.status || "pending") as any,
-    featured: parseBool(item.featured) ?? false,
-    verified: parseBool(item.verified) ?? false,
-    sponsored: parseBool(item.sponsored) ?? false,
+    free_plan: item.free_plan !== undefined ? item.free_plan : enriched.free_plan,
+    platforms: item.platforms || enriched.platforms || [],
+    features: item.features || enriched.features || [],
+    use_cases: item.use_cases || enriched.use_cases || [],
+    best_for: item.best_for || enriched.best_for || [],
+    capabilities: item.capabilities || enriched.capabilities || [],
+    integrations: item.integrations || enriched.integrations || [],
+    api_available: item.api_available !== undefined ? item.api_available : enriched.api_available,
+    browser_extension: item.browser_extension !== undefined ? item.browser_extension : enriched.browser_extension,
+    mobile_app: item.mobile_app !== undefined ? item.mobile_app : enriched.mobile_app,
+    languages: item.languages || enriched.languages || [],
+    company_name: item.company_name || enriched.company_name || null,
+    logo_url: item.logo_url || meta.favicon || null,
+    hero_image_url: item.hero_image_url || item.cover_url || meta.ogImage || null,
+    seo_title: item.seo_title || enriched.seo_title || meta.title || null,
+    seo_description: item.seo_description || enriched.seo_description || meta.description || null,
+    search_tags: item.search_tags || item.tags || enriched.search_tags || [],
+    featured: item.featured !== undefined ? item.featured : false,
+    slug: item.slug || undefined,
+    is_published: item.is_published !== undefined ? item.is_published : true,
   };
 
-  return { toolData, featuresList, tagsList };
+  return toolData;
 }
 
 export const bulkImport = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
+  .validator((d) =>
     z
       .object({
-        items: z.array(importItemSchema).min(1).max(50),
+        items: z.array(z.any()).min(1).max(50),
         enrich: z.boolean().default(true),
         force: z.boolean().default(false),
       })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const { data: cats } = await supabaseAdmin.from("categories").select("id,name");
-    const categoryNameToId: Record<string, string> = {};
-    for (const c of cats ?? []) {
-      categoryNameToId[c.name.toLowerCase()] = c.id;
-    }
-
     const { data: allTools } = await supabaseAdmin
       .from("tools")
-      .select("id, name, slug, website_url, short_description, full_description, pricing, pricing_details, category_id, pros, cons, platforms, use_cases, capabilities, industries, best_for, not_good_for, logo_url, cover_url, affiliate_url, compare_data, status, featured, verified, sponsored, key_summary, secondary_categories");
+      .select("id, tool_name, website_url");
 
     const results: Array<{
       name: string;
       url: string;
       status: "imported" | "updated" | "skipped" | "error";
       message?: string;
-      slug?: string;
       toolId?: string;
     }> = [];
 
     const localTools = allTools ? [...allTools] : [];
 
-    for (const item of data.items) {
+    for (const rawItem of data.items) {
       try {
+        const item = rawItem as any;
         const meta = await fetchSiteMetadata(item.website_url);
         const host = new URL(meta.url).hostname.replace(/^www\./, "").toLowerCase();
-        const slug = slugify(item.name);
-        const normalizedInputName = item.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const normalizedInputName = (item.tool_name || item.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
         const existing = localTools.find((t: any) => {
           let tHost = "";
@@ -649,366 +476,146 @@ export const bulkImport = createServerFn({ method: "POST" })
           } catch {
             tHost = t.website_url.toLowerCase();
           }
-          const tSlug = t.slug;
-          const normalizedTName = t.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const normalizedTName = t.tool_name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
           if (normalizedTName === normalizedInputName) return true;
-          if (tSlug === slug) return true;
           if (tHost === host) return true;
-          if (
-            normalizedInputName.length > 3 &&
-            normalizedTName.length > 3 &&
-            (normalizedInputName.includes(normalizedTName) ||
-              normalizedTName.includes(normalizedInputName))
-          ) {
-            return true;
-          }
           return false;
         });
 
         if (existing) {
           if (data.force) {
             let enriched;
-            let needsReview = false;
             try {
               if (data.enrich) {
                 enriched = await enrichWithAI({
-                  name: item.name,
+                  name: item.tool_name || item.name || "Untitled",
                   url: meta.url,
                   rawTitle: meta.title,
                   rawDescription: meta.description,
                   bodyText: meta.bodyText,
-                  categories: cats ?? [],
                 });
               } else {
                 throw new Error("Enrichment skipped");
               }
             } catch {
-              needsReview = true;
               enriched = {
+                tagline: meta.title || "",
                 short_description: meta.description?.slice(0, 120) ?? "",
                 full_description: meta.description ?? "",
-                key_summary: "",
-                category_id: null as string | null,
-                secondary_categories: [] as string[],
-                tags: [] as string[],
-                pricing: null as string | null,
-                pricing_details: null as string | null,
-                features: [] as string[],
-                pros: [] as string[],
-                cons: [] as string[],
-                platforms: [] as string[],
-                use_cases: [] as string[],
-                capabilities: [] as string[],
-                industries: [] as string[],
-                best_for: [] as string[],
-                not_good_for: [] as string[],
-                ai_model: null as string | null,
-                compare_data: {
-                  coding_quality: "Basic",
-                  writing_quality: "Basic",
-                  research: "Basic",
-                  image_generation: false,
-                  video_generation: false,
-                  voice: false,
-                  web_search: false,
-                  file_upload: false,
-                  api: false,
-                },
+                category: "Other",
+                sub_category: [],
+                pricing: "freemium",
+                pricing_details: null,
+                free_plan: false,
+                platforms: [],
+                features: [],
+                use_cases: [],
+                best_for: [],
+                capabilities: [],
+                integrations: [],
+                api_available: false,
+                browser_extension: false,
+                mobile_app: false,
+                languages: [],
+                company_name: item.tool_name || item.name || "Untitled",
+                seo_title: meta.title || "",
+                seo_description: meta.description || "",
+                search_tags: [],
               };
             }
 
-            const { toolData, featuresList, tagsList } = buildToolPayload(item, meta, enriched, categoryNameToId);
-
-            const updatePayload = {
-              ...toolData,
-              needs_review: needsReview,
-              updated_at: new Date().toISOString(),
-            };
-
+            const toolData = buildToolPayload(item, meta, enriched);
             const { error } = await supabaseAdmin
               .from("tools")
-              .update(updatePayload as any)
+              .update(toolData as any)
               .eq("id", (existing as any).id);
 
             if (error) throw error;
 
-            if (featuresList?.length) {
-              await supabaseAdmin.from("tool_features").delete().eq("tool_id", (existing as any).id);
-              await supabaseAdmin.from("tool_features").insert(
-                featuresList.map((feature: string, idx: number) => ({
-                  tool_id: (existing as any).id,
-                  feature,
-                  sort_order: idx + 1,
-                })),
-              );
-            }
-
-            if (tagsList?.length) {
-              await supabaseAdmin.from("tool_tags").delete().eq("tool_id", (existing as any).id);
-              await supabaseAdmin
-                .from("tool_tags")
-                .insert(tagsList.map((tag: string) => ({ tool_id: (existing as any).id, tag })));
-            }
-
             results.push({
-              name: item.name,
+              name: toolData.tool_name,
               url: item.website_url,
               status: "updated",
-              slug: (existing as any).slug,
               toolId: (existing as any).id,
             });
           } else {
-            let enriched;
-            let needsReview = false;
-            try {
-              if (data.enrich) {
-                enriched = await enrichWithAI({
-                  name: item.name,
-                  url: meta.url,
-                  rawTitle: meta.title,
-                  rawDescription: meta.description,
-                  bodyText: meta.bodyText,
-                  categories: cats ?? [],
-                });
-              } else {
-                throw new Error("Enrichment skipped");
-              }
-            } catch {
-              needsReview = true;
-              enriched = {
-                short_description: meta.description?.slice(0, 120) ?? "",
-                full_description: meta.description ?? "",
-                key_summary: "",
-                category_id: null as string | null,
-                secondary_categories: [] as string[],
-                tags: [] as string[],
-                pricing: null as string | null,
-                pricing_details: null as string | null,
-                features: [] as string[],
-                pros: [] as string[],
-                cons: [] as string[],
-                platforms: [] as string[],
-                use_cases: [] as string[],
-                capabilities: [] as string[],
-                industries: [] as string[],
-                best_for: [] as string[],
-                not_good_for: [] as string[],
-                ai_model: null as string | null,
-                compare_data: {
-                  coding_quality: "Basic",
-                  writing_quality: "Basic",
-                  research: "Basic",
-                  image_generation: false,
-                  video_generation: false,
-                  voice: false,
-                  web_search: false,
-                  file_upload: false,
-                  api: false,
-                },
-              };
-            }
-
-            const { toolData, featuresList, tagsList } = buildToolPayload(item, meta, enriched, categoryNameToId);
-            const existingTool = existing as any;
-            const updates: Record<string, any> = {};
-            let hasUpdates = false;
-
-            const scalarFields = [
-              "short_description", "full_description", "pricing", "pricing_details",
-              "category_id", "logo_url", "cover_url", "affiliate_url", "key_summary",
-            ];
-
-            for (const field of scalarFields) {
-              if (
-                (existingTool[field] === null ||
-                  existingTool[field] === undefined ||
-                  existingTool[field] === "") &&
-                toolData[field] !== null &&
-                toolData[field] !== undefined &&
-                toolData[field] !== ""
-              ) {
-                updates[field] = toolData[field];
-                hasUpdates = true;
-              }
-            }
-
-            const arrayFields = [
-              "pros", "cons", "platforms", "use_cases", "capabilities",
-              "industries", "best_for", "not_good_for", "secondary_categories",
-            ];
-
-            for (const field of arrayFields) {
-              const existingArr = existingTool[field];
-              const newVal = toolData[field];
-              if (
-                (!existingArr || existingArr.length === 0) &&
-                newVal &&
-                Array.isArray(newVal) &&
-                newVal.length > 0
-              ) {
-                updates[field] = newVal;
-                hasUpdates = true;
-              }
-            }
-
-            if (
-              !existingTool.compare_data ||
-              Object.keys(existingTool.compare_data).length === 0
-            ) {
-              updates.compare_data = toolData.compare_data;
-              hasUpdates = true;
-            }
-
-            if (hasUpdates) {
-              updates.needs_review = needsReview || existingTool.needs_review || false;
-              updates.updated_at = new Date().toISOString();
-
-              const { error } = await supabaseAdmin
-                .from("tools")
-                .update(updates as any)
-                .eq("id", existingTool.id);
-
-              if (error) throw error;
-
-              if (featuresList?.length) {
-                await supabaseAdmin.from("tool_features").delete().eq("tool_id", existingTool.id);
-                await supabaseAdmin.from("tool_features").insert(
-                  featuresList.map((feature: string, idx: number) => ({
-                    tool_id: existingTool.id,
-                    feature,
-                    sort_order: idx + 1,
-                  })),
-                );
-              }
-
-              if (tagsList?.length) {
-                await supabaseAdmin.from("tool_tags").delete().eq("tool_id", existingTool.id);
-                await supabaseAdmin
-                  .from("tool_tags")
-                  .insert(tagsList.map((tag: string) => ({ tool_id: existingTool.id, tag })));
-              }
-
-              results.push({
-                name: item.name,
-                url: item.website_url,
-                status: "updated",
-                slug: existingTool.slug,
-                toolId: existingTool.id,
-              });
-            } else {
-              results.push({
-                name: item.name,
-                url: item.website_url,
-                status: "skipped",
-                message: "Already exists, no missing fields to fill",
-                slug: existingTool.slug,
-              });
-            }
+            results.push({
+              name: item.tool_name || item.name || "Untitled",
+              url: item.website_url,
+              status: "skipped",
+              message: "Already exists",
+            });
           }
           continue;
         }
 
         let enriched;
-        let needsReview = false;
         try {
           if (data.enrich) {
             enriched = await enrichWithAI({
-              name: item.name,
+              name: item.tool_name || item.name || "Untitled",
               url: meta.url,
               rawTitle: meta.title,
               rawDescription: meta.description,
               bodyText: meta.bodyText,
-              categories: cats ?? [],
             });
           } else {
             throw new Error("Enrichment skipped");
           }
         } catch {
-          needsReview = true;
           enriched = {
+            tagline: meta.title || "",
             short_description: meta.description?.slice(0, 120) ?? "",
             full_description: meta.description ?? "",
-            key_summary: "",
-            category_id: null as string | null,
-            secondary_categories: [] as string[],
-            tags: [] as string[],
-            pricing: null as string | null,
-            pricing_details: null as string | null,
-            features: [] as string[],
-            pros: [] as string[],
-            cons: [] as string[],
-            platforms: [] as string[],
-            use_cases: [] as string[],
-            capabilities: [] as string[],
-            industries: [] as string[],
-            best_for: [] as string[],
-            not_good_for: [] as string[],
-            ai_model: null as string | null,
-            compare_data: {
-              coding_quality: "Basic",
-              writing_quality: "Basic",
-              research: "Basic",
-              image_generation: false,
-              video_generation: false,
-              voice: false,
-              web_search: false,
-              file_upload: false,
-              api: false,
-            },
+            category: "Other",
+            sub_category: [],
+            pricing: "freemium",
+            pricing_details: null,
+            free_plan: false,
+            platforms: [],
+            features: [],
+            use_cases: [],
+            best_for: [],
+            capabilities: [],
+            integrations: [],
+            api_available: false,
+            browser_extension: false,
+            mobile_app: false,
+            languages: [],
+            company_name: item.tool_name || item.name || "Untitled",
+            seo_title: meta.title || "",
+            seo_description: meta.description || "",
+            search_tags: [],
           };
         }
 
-        const { toolData, featuresList, tagsList } = buildToolPayload(item, meta, enriched, categoryNameToId);
+        const toolData = buildToolPayload(item, meta, enriched);
 
         const { data: inserted, error } = await supabaseAdmin
           .from("tools")
-          .insert({
-            ...toolData,
-            short_description: toolData.short_description || `${item.name} — AI tool`,
-            needs_review: needsReview,
-            submitted_by: null,
-          } as any)
-          .select("id,slug")
+          .insert(toolData as any)
+          .select("id")
           .single();
 
         if (error) throw error;
 
         localTools.push({
           id: inserted.id,
-          name: item.name,
-          slug: inserted.slug,
+          tool_name: toolData.tool_name,
           website_url: meta.url,
         } as any);
 
-        if (featuresList?.length) {
-          await supabaseAdmin.from("tool_features").insert(
-            featuresList.map((feature: string, idx: number) => ({
-              tool_id: inserted.id,
-              feature,
-              sort_order: idx + 1,
-            })),
-          );
-        }
-
-        if (tagsList?.length) {
-          await supabaseAdmin
-            .from("tool_tags")
-            .insert(tagsList.map((tag: string) => ({ tool_id: inserted.id, tag })));
-        }
-
         results.push({
-          name: item.name,
+          name: toolData.tool_name,
           url: item.website_url,
           status: "imported",
-          message: needsReview ? "Needs Review" : undefined,
-          slug: inserted.slug,
           toolId: inserted.id,
         });
       } catch (e: any) {
         results.push({
-          name: item.name,
-          url: item.website_url,
+          name: rawItem.tool_name || rawItem.name || "Untitled",
+          url: rawItem.website_url || "",
           status: "error",
           message: e?.message ?? "import failed",
         });
@@ -1021,23 +628,20 @@ export const bulkImport = createServerFn({ method: "POST" })
 export const dataQualityScan = createServerFn({ method: "POST" }).handler(async () => {
   const { data: tools } = await supabaseAdmin
     .from("tools")
-    .select("id,slug,name,website_url,logo_url,short_description,category_id,status");
-  const issues: Array<{ toolId: string; slug: string; name: string; problems: string[] }> = [];
-  const bySlug = new Map<string, number>();
+    .select("id,tool_name,website_url,logo_url,short_description,category");
+  const issues: Array<{ toolId: string; name: string; problems: string[] }> = [];
   const byUrl = new Map<string, number>();
   for (const t of tools ?? []) {
-    bySlug.set(t.slug, (bySlug.get(t.slug) ?? 0) + 1);
     byUrl.set(t.website_url, (byUrl.get(t.website_url) ?? 0) + 1);
   }
   for (const t of tools ?? []) {
     const problems: string[] = [];
     if (!t.logo_url) problems.push("Missing logo");
-    if (!t.category_id) problems.push("Missing category");
+    if (!t.category) problems.push("Missing category");
     if (!t.short_description || t.short_description.length < 30)
       problems.push("Short description too brief");
-    if ((bySlug.get(t.slug) ?? 0) > 1) problems.push("Duplicate slug");
     if ((byUrl.get(t.website_url) ?? 0) > 1) problems.push("Duplicate URL");
-    if (problems.length) issues.push({ toolId: t.id, slug: t.slug, name: t.name, problems });
+    if (problems.length) issues.push({ toolId: t.id, name: t.tool_name, problems });
   }
   return { totalTools: tools?.length ?? 0, issueCount: issues.length, issues };
 });

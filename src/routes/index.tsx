@@ -52,13 +52,13 @@ function Home() {
   });
   const trending = useQuery({
     queryKey: ["tools", "trending"],
-    queryFn: async () => (await Q.tools({ sort: "views", limit: 8 })).data ?? [],
+    queryFn: async () => (await Q.tools({ limit: 8 })).data ?? [],
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
   const newest = useQuery({
     queryKey: ["tools", "newest"],
-    queryFn: async () => (await Q.tools({ sort: "newest", limit: 8 })).data ?? [],
+    queryFn: async () => (await Q.tools({ limit: 8 })).data ?? [],
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

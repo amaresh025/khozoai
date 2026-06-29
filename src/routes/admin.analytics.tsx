@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -35,38 +36,54 @@ function AdminAnalytics() {
     },
   });
 
-  const topTools = useQuery({
-    queryKey: ["admin", "analytics", "top-tools"],
-    queryFn: async () =>
-      (
-        await supabase
-          .from("tools")
-          .select("id,name,slug,views,clicks")
-          .order("views", { ascending: false })
-          .limit(10)
-      ).data ?? [],
+  const toolsList = useQuery({
+    queryKey: ["admin", "analytics", "tools-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("tools").select("id,tool_name");
+      return data ?? [];
+    },
   });
+
+  const topTools = useMemo(() => {
+    const viewCounts = new Map<string, number>();
+    for (const ev of events.data ?? []) {
+      if (ev.event_type === "tool_view" && ev.tool_id) {
+        viewCounts.set(ev.tool_id, (viewCounts.get(ev.tool_id) ?? 0) + 1);
+      }
+    }
+    const toolMap = new Map<string, string>();
+    toolsList.data?.forEach((t) => {
+      toolMap.set(t.id, t.tool_name);
+    });
+
+    return Array.from(viewCounts.entries())
+      .map(([id, count]) => ({
+        id,
+        name: toolMap.get(id) || "Unknown Tool",
+        views: count,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+  }, [events.data, toolsList.data]);
 
   const cats = useQuery({
     queryKey: ["admin", "analytics", "cat-counts"],
     queryFn: async () => {
-      const { data: cs } = await supabase.from("categories").select("id,name");
-      if (!cs) return [];
-      const counts = await Promise.all(
-        cs.map(async (c) => {
-          const r = await supabase
-            .from("tools")
-            .select("id", { count: "exact", head: true })
-            .eq("category_id", c.id)
-            .eq("status", "approved");
-          return { name: c.name, count: r.count ?? 0 };
-        }),
-      );
-      return counts.sort((a, b) => b.count - a.count).slice(0, 10);
+      const { data: tools } = await supabase.from("tools").select("category");
+      if (!tools) return [];
+      const counts = new Map<string, number>();
+      tools.forEach((t) => {
+        if (t.category) {
+          counts.set(t.category, (counts.get(t.category) ?? 0) + 1);
+        }
+      });
+      return Array.from(counts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
     },
   });
 
-  // Aggregate events by day
   const byDay = (() => {
     const map = new Map<string, { day: string; views: number; clicks: number }>();
     for (let i = days - 1; i >= 0; i--) {
@@ -83,7 +100,6 @@ function AdminAnalytics() {
     return Array.from(map.values());
   })();
 
-  // Search queries from metadata
   const searchTerms = (() => {
     const counts = new Map<string, number>();
     for (const ev of events.data ?? []) {
@@ -159,11 +175,11 @@ function AdminAnalytics() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-5">
           <h2 className="mb-4 font-display text-lg font-bold tracking-tight">
-            Top tools (all-time views)
+            Top tools (views last 30 days)
           </h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topTools.data ?? []} layout="vertical">
+              <BarChart data={topTools} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis

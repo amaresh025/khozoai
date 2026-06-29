@@ -1,162 +1,231 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  X,
-  Loader2,
-  Sparkles,
-  AlertTriangle,
-  Globe,
-  Tag,
-  Settings,
-  DollarSign,
-  FileText,
-  BadgeCheck,
-  Eye,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Info,
-} from "lucide-react";
+import { X, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  enrichUrl,
-  adminSaveTool,
-  adminGetTool,
-  adminListCategories,
-} from "@/lib/admin.functions";
-import { CAPABILITY_TAXONOMY, USE_CASE_TAXONOMY, INDUSTRY_TAXONOMY } from "@/lib/queries";
+import { enrichUrl, adminSaveTool, adminGetTool } from "@/lib/admin.functions";
 
 type FormState = {
-  name: string;
-  slug: string;
+  tool_name: string;
+  website_url: string;
+  tagline: string;
   short_description: string;
   full_description: string;
-  website_url: string;
-  affiliate_url: string;
-  logo_url: string;
-  cover_url: string;
+  category: string;
+  sub_category: string[];
   pricing: string;
   pricing_details: string;
-  category_id: string;
-  status: string;
-  featured: boolean;
-  verified: boolean;
-  sponsored: boolean;
-  pros: string;
-  cons: string;
-  platforms: string;
-  key_summary: string;
-  secondary_categories: string[];
+  free_plan: boolean;
+  platforms: string[];
+  features: string[];
   use_cases: string[];
+  best_for: string[];
   capabilities: string[];
-  industries: string[];
-  best_for: string;
-  not_good_for: string;
-  compare_data: {
-    coding_quality: string;
-    writing_quality: string;
-    research: string;
-    image_generation: boolean;
-    video_generation: boolean;
-    voice: boolean;
-    web_search: boolean;
-    file_upload: boolean;
-    api: boolean;
-    browser_extension: boolean;
-    mobile_app: boolean;
-  };
-  needs_review: boolean;
-  // New AI agent integration / metadata fields
-  source_url: string;
-  import_source: string;
-  ai_generated: boolean;
-  ai_last_updated: string | null;
-  last_verified: string | null;
-  manually_edited: boolean;
-  import_status: string;
-  // New SEO fields
+  integrations: string[];
+  api_available: boolean;
+  browser_extension: boolean;
+  mobile_app: boolean;
+  languages: string[];
+  company_name: string;
+  logo_url: string;
+  hero_image_url: string;
   seo_title: string;
   seo_description: string;
-  seo_image: string;
-  // Custom textareas for nested relations
-  features: string;
-  tags: string;
+  search_tags: string[];
+  featured: boolean;
+  is_published: boolean;
+  slug?: string;
 };
 
 const empty: FormState = {
-  name: "",
-  slug: "",
+  tool_name: "",
+  website_url: "",
+  tagline: "",
   short_description: "",
   full_description: "",
-  website_url: "",
-  affiliate_url: "",
-  logo_url: "",
-  cover_url: "",
-  pricing: "freemium",
+  category: "AI Coding",
+  sub_category: [],
+  pricing: "free",
   pricing_details: "",
-  category_id: "",
-  status: "approved",
-  featured: false,
-  verified: false,
-  sponsored: false,
-  pros: "",
-  cons: "",
-  platforms: "Web",
-  key_summary: "",
-  secondary_categories: [],
+  free_plan: true,
+  platforms: ["Web"],
+  features: [],
   use_cases: [],
+  best_for: [],
   capabilities: [],
-  industries: [],
-  best_for: "",
-  not_good_for: "",
-  compare_data: {
-    coding_quality: "Basic",
-    writing_quality: "Basic",
-    research: "Basic",
-    image_generation: false,
-    video_generation: false,
-    voice: false,
-    web_search: false,
-    file_upload: false,
-    api: false,
-    browser_extension: false,
-    mobile_app: false,
-  },
-  needs_review: false,
-  source_url: "",
-  import_source: "",
-  ai_generated: false,
-  ai_last_updated: null,
-  last_verified: null,
-  manually_edited: false,
-  import_status: "",
+  integrations: [],
+  api_available: false,
+  browser_extension: false,
+  mobile_app: false,
+  languages: ["English"],
+  company_name: "",
+  logo_url: "",
+  hero_image_url: "",
   seo_title: "",
   seo_description: "",
-  seo_image: "",
-  features: "",
-  tags: "",
+  search_tags: [],
+  featured: false,
+  is_published: true,
+  slug: "",
 };
 
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 80);
+const COMMON_CATEGORIES = [
+  "AI Coding",
+  "AI Writing",
+  "AI Chatbot",
+  "AI Research",
+  "AI Search",
+  "AI Image Generation",
+  "AI Video Generation",
+  "AI Voice Generation",
+  "AI Music Generation",
+  "AI Automation",
+  "AI Productivity",
+  "AI Design",
+  "AI Data Analysis",
+  "AI Translation",
+  "AI Project Management",
+  "Other",
+];
+
+function ArrayInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string[];
+  onChange: (val: string[]) => void;
+  placeholder?: string;
+}) {
+  const [input, setInput] = useState("");
+  const handleAdd = () => {
+    const trimmed = input.trim();
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+      setInput("");
+    }
+  };
+  const handleRemove = (item: string) => {
+    onChange(value.filter((x) => x !== item));
+  };
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        {label}
+      </label>
+      <div className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleAdd();
+            }
+          }}
+          placeholder={placeholder || `Add ${label.toLowerCase()}...`}
+          className="h-9 flex-1 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+        <Button type="button" onClick={handleAdd} size="sm" variant="outline">
+          Add
+        </Button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5 min-h-[28px]">
+        {value.map((item) => (
+          <span
+            key={item}
+            className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary border border-primary/20"
+          >
+            {item}
+            <button
+              type="button"
+              onClick={() => handleRemove(item)}
+              className="text-primary hover:text-foreground font-bold ml-1"
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+        {value.length === 0 && (
+          <span className="text-xs text-muted-foreground italic">None added yet</span>
+        )}
+      </div>
+    </div>
+  );
 }
 
-function isValidUrl(str: string) {
-  if (!str) return true; // Optional fields are valid if empty
-  try {
-    new URL(str);
-    return true;
-  } catch {
-    return false;
-  }
+function ToggleSwitch({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (val: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between p-3 rounded-lg border border-border bg-surface/30 cursor-pointer select-none">
+      <span className="text-sm font-semibold text-foreground">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+          checked ? "bg-primary" : "bg-muted"
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </label>
+  );
+}
+
+function ImageInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        {label}
+      </label>
+      <input
+        type="url"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+      {value && (
+        <div className="mt-2 flex items-center gap-3 p-2 rounded-lg border border-border bg-surface/30">
+          <img
+            src={value}
+            alt="Preview"
+            className="h-12 w-12 rounded object-contain border border-border bg-background"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+          <span className="text-xs text-muted-foreground truncate">{value}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ToolEditor({
@@ -171,25 +240,13 @@ export function ToolEditor({
   const isNew = toolId === null;
   const [form, setForm] = useState<FormState>(empty);
   const [initialForm, setInitialForm] = useState<FormState | null>(null);
-  const [regenerating, setRegenerating] = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [showMetadata, setShowMetadata] = useState(false);
 
   const qc = useQueryClient();
-
-  const listCatsFn = useServerFn(adminListCategories);
   const getToolFn = useServerFn(adminGetTool);
   const saveToolFn = useServerFn(adminSaveTool);
   const enrichFn = useServerFn(enrichUrl);
-
-  const cats = useQuery({
-    queryKey: ["admin", "categories"],
-    queryFn: async () => {
-      const result = await listCatsFn({});
-      return result ?? [];
-    },
-  });
 
   const existing = useQuery({
     enabled: !isNew,
@@ -204,57 +261,35 @@ export function ToolEditor({
     if (existing.data) {
       const t: any = existing.data;
       const loaded: FormState = {
-        name: t.name ?? "",
-        slug: t.slug ?? "",
+        tool_name: t.tool_name ?? "",
+        website_url: t.website_url ?? "",
+        tagline: t.tagline ?? "",
         short_description: t.short_description ?? "",
         full_description: t.full_description ?? "",
-        website_url: t.website_url ?? "",
-        affiliate_url: t.affiliate_url ?? "",
-        logo_url: t.logo_url ?? "",
-        cover_url: t.cover_url ?? "",
-        pricing: t.pricing ?? "freemium",
+        category: t.category ?? "AI Coding",
+        sub_category: t.sub_category ?? [],
+        pricing: t.pricing ?? "free",
         pricing_details: t.pricing_details ?? "",
-        category_id: t.category_id ?? "",
-        status: t.status ?? "approved",
-        featured: !!t.featured,
-        verified: !!t.verified,
-        sponsored: !!t.sponsored,
-        pros: (t.pros ?? []).join("\n"),
-        cons: (t.cons ?? []).join("\n"),
-        platforms: (t.platforms ?? []).join(", "),
-        key_summary: t.key_summary ?? "",
-        secondary_categories: t.secondary_categories ?? [],
+        free_plan: !!t.free_plan,
+        platforms: t.platforms ?? [],
+        features: t.features ?? [],
         use_cases: t.use_cases ?? [],
+        best_for: t.best_for ?? [],
         capabilities: t.capabilities ?? [],
-        industries: t.industries ?? [],
-        best_for: (t.best_for ?? []).join("\n"),
-        not_good_for: (t.not_good_for ?? []).join("\n"),
-        compare_data: {
-          coding_quality: t.compare_data?.coding_quality ?? "Basic",
-          writing_quality: t.compare_data?.writing_quality ?? "Basic",
-          research: t.compare_data?.research ?? "Basic",
-          image_generation: !!t.compare_data?.image_generation,
-          video_generation: !!t.compare_data?.video_generation,
-          voice: !!t.compare_data?.voice,
-          web_search: !!t.compare_data?.web_search,
-          file_upload: !!t.compare_data?.file_upload,
-          api: !!t.compare_data?.api,
-          browser_extension: !!t.compare_data?.browser_extension,
-          mobile_app: !!t.compare_data?.mobile_app,
-        },
-        needs_review: !!t.needs_review,
-        source_url: t.source_url ?? "",
-        import_source: t.import_source ?? "",
-        ai_generated: !!t.ai_generated,
-        ai_last_updated: t.ai_last_updated ?? null,
-        last_verified: t.last_verified ?? null,
-        manually_edited: !!t.manually_edited,
-        import_status: t.import_status ?? "",
+        integrations: t.integrations ?? [],
+        api_available: !!t.api_available,
+        browser_extension: !!t.browser_extension,
+        mobile_app: !!t.mobile_app,
+        languages: t.languages ?? [],
+        company_name: t.company_name ?? "",
+        logo_url: t.logo_url ?? "",
+        hero_image_url: t.hero_image_url ?? "",
         seo_title: t.seo_title ?? "",
         seo_description: t.seo_description ?? "",
-        seo_image: t.seo_image ?? "",
-        features: (t.tool_features ?? []).map((f: any) => f.feature).join("\n"),
-        tags: (t.tool_tags ?? []).map((tg: any) => tg.tag).join(", "),
+        search_tags: t.search_tags ?? [],
+        featured: !!t.featured,
+        is_published: t.is_published !== false,
+        slug: t.slug ?? "",
       };
       setForm(loaded);
       setInitialForm(loaded);
@@ -270,188 +305,100 @@ export function ToolEditor({
   };
 
   const handleCloseAttempt = () => {
-    if (isDirty()) {
-      if (confirm("You have unsaved changes. Are you sure you want to close?")) {
-        onClose();
-      }
-    } else {
+    if (isDirty() && confirm("You have unsaved changes. Are you sure you want to close?")) {
+      onClose();
+    } else if (!isDirty()) {
       onClose();
     }
   };
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = "Tool name is required";
+    if (!form.tool_name.trim()) errs.tool_name = "Tool name is required";
     if (!form.website_url.trim()) {
       errs.website_url = "Website URL is required";
-    } else if (!isValidUrl(form.website_url)) {
-      errs.website_url = "Enter a valid URL (including https://)";
+    } else {
+      try {
+        new URL(form.website_url);
+      } catch {
+        errs.website_url = "Enter a valid website URL (with https://)";
+      }
     }
-    if (form.slug && !/^[a-z0-9-]+$/.test(form.slug)) {
-      errs.slug = "Slug must contain only lowercase letters, numbers, and hyphens";
-    }
-    if (form.affiliate_url && !isValidUrl(form.affiliate_url)) {
-      errs.affiliate_url = "Enter a valid URL";
-    }
-    if (form.logo_url && !isValidUrl(form.logo_url)) {
-      errs.logo_url = "Enter a valid URL";
-    }
-    if (form.cover_url && !isValidUrl(form.cover_url)) {
-      errs.cover_url = "Enter a valid URL";
-    }
-    if (form.seo_image && !isValidUrl(form.seo_image)) {
-      errs.seo_image = "Enter a valid URL";
-    }
+    if (!form.category.trim()) errs.category = "Category is required";
+    if (!form.short_description.trim()) errs.short_description = "Short description is required";
 
     setErrors(errs);
-    if (Object.keys(errs).length > 0) {
-      toast.error("Please resolve the validation errors before saving.");
-      return false;
-    }
-    return true;
+    return Object.keys(errs).length === 0;
   };
 
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
-        name: form.name,
-        slug: form.slug || slugify(form.name),
-        short_description: form.short_description,
-        full_description: form.full_description || null,
-        website_url: form.website_url,
-        affiliate_url: form.affiliate_url || null,
-        logo_url: form.logo_url || null,
-        cover_url: form.cover_url || null,
-        pricing: form.pricing,
-        pricing_details: form.pricing_details || null,
-        category_id: form.category_id || null,
-        status: form.status,
-        featured: form.featured,
-        verified: form.verified,
-        sponsored: form.sponsored,
-        pros: form.pros
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        cons: form.cons
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        platforms: form.platforms
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        key_summary: form.key_summary || null,
-        secondary_categories: form.secondary_categories,
-        use_cases: form.use_cases,
-        capabilities: form.capabilities,
-        industries: form.industries,
-        best_for: form.best_for
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        not_good_for: form.not_good_for
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        compare_data: form.compare_data,
-        needs_review: form.needs_review,
-        source_url: form.source_url || null,
-        import_source: form.import_source || null,
-        ai_generated: form.ai_generated,
-        ai_last_updated: form.ai_last_updated,
-        last_verified: new Date().toISOString(), // automatically set when saved
-        manually_edited: true, // set manually edited to true when saved via this admin form
-        import_status: form.import_status || null,
-        seo_title: form.seo_title || null,
-        seo_description: form.seo_description || null,
-        seo_image: form.seo_image || null,
-        // Nested updates handled server side
-        features: form.features
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        tags: form.tags
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        ...form,
+        updated_at: new Date().toISOString(),
       };
       await saveToolFn({ data: { id: isNew ? undefined : toolId!, payload } });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin"] });
+      qc.invalidateQueries({ queryKey: ["tools"] });
       toast.success(isNew ? "Tool created successfully" : "Tool updated successfully");
       onSaved();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
       save.mutate();
+    } else {
+      toast.error("Please fill in all required fields.");
     }
   };
 
-  const handleRegenerate = async () => {
+  const handleEnrich = async () => {
     if (!form.website_url) return toast.error("Enter a website URL first");
-    setRegenerating(true);
+    setEnriching(true);
     try {
-      const res = await enrichFn({ data: { url: form.website_url, name: form.name || undefined } });
+      const res = await enrichFn({ data: { url: form.website_url, name: form.tool_name || undefined } });
       if (res.enriched) {
         const e = res.enriched;
         setForm((prev) => ({
           ...prev,
-          name: res.name || prev.name,
+          tool_name: res.name || e.company_name || prev.tool_name,
+          tagline: e.tagline ?? prev.tagline,
           short_description: e.short_description ?? prev.short_description,
           full_description: e.full_description ?? prev.full_description,
-          key_summary: e.key_summary ?? prev.key_summary,
-          category_id: e.category_id ?? prev.category_id,
-          secondary_categories: e.secondary_categories ?? prev.secondary_categories,
+          category: e.category ?? prev.category,
+          sub_category: e.sub_category ?? prev.sub_category,
           pricing: e.pricing ?? prev.pricing,
           pricing_details: e.pricing_details ?? prev.pricing_details,
-          pros: (e.pros ?? []).join("\n"),
-          cons: (e.cons ?? []).join("\n"),
-          platforms: (e.platforms ?? []).join(", "),
+          free_plan: e.free_plan !== undefined ? e.free_plan : prev.free_plan,
+          platforms: e.platforms ?? prev.platforms,
+          features: e.features ?? prev.features,
           use_cases: e.use_cases ?? prev.use_cases,
+          best_for: e.best_for ?? prev.best_for,
           capabilities: e.capabilities ?? prev.capabilities,
-          industries: e.industries ?? prev.industries,
-          best_for: (e.best_for ?? []).join("\n"),
-          not_good_for: (e.not_good_for ?? []).join("\n"),
-          features: (e.features ?? []).join("\n"),
-          tags: (e.tags ?? []).join(", "),
-          compare_data: {
-            coding_quality: e.compare_data?.coding_quality ?? prev.compare_data.coding_quality,
-            writing_quality: e.compare_data?.writing_quality ?? prev.compare_data.writing_quality,
-            research: e.compare_data?.research ?? prev.compare_data.research,
-            image_generation: !!e.compare_data?.image_generation,
-            video_generation: !!e.compare_data?.video_generation,
-            voice: !!e.compare_data?.voice,
-            web_search: !!e.compare_data?.web_search,
-            file_upload: !!e.compare_data?.file_upload,
-            api: !!e.compare_data?.api,
-            browser_extension: !!e.compare_data?.browser_extension,
-            mobile_app: !!e.compare_data?.mobile_app,
-          },
-          needs_review: false,
-          ai_generated: true,
-          ai_last_updated: new Date().toISOString(),
-          import_source: "lovable_ai_enrichment",
-          import_status: "enriched",
+          integrations: e.integrations ?? prev.integrations,
+          api_available: e.api_available !== undefined ? e.api_available : prev.api_available,
+          browser_extension: e.browser_extension !== undefined ? e.browser_extension : prev.browser_extension,
+          mobile_app: e.mobile_app !== undefined ? e.mobile_app : prev.mobile_app,
+          languages: e.languages ?? prev.languages,
+          company_name: e.company_name ?? prev.company_name,
+          seo_title: e.seo_title ?? prev.seo_title,
+          seo_description: e.seo_description ?? prev.seo_description,
+          search_tags: e.search_tags ?? prev.search_tags,
+          logo_url: res.meta?.favicon || prev.logo_url,
+          hero_image_url: res.meta?.ogImage || prev.hero_image_url,
         }));
-        toast.success("AI Enrichment finished! Form fields populated.");
-      } else {
-        toast.error("AI returned empty data.");
+        toast.success("AI enrichment retrieved and populated!");
       }
     } catch (err: any) {
-      toast.error(`Enrichment failed: ${err.message}`);
+      toast.error(`Scraping failed: ${err.message}`);
     } finally {
-      setRegenerating(false);
+      setEnriching(false);
     }
-  };
-
-  const showComingSoon = (btnName: string) => {
-    toast.info(`${btnName}: Coming Soon`);
   };
 
   return (
@@ -466,16 +413,11 @@ export function ToolEditor({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-surface/30">
           <div>
-            <h2 className="font-display text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              {isNew ? "New Tool Structure" : `Edit: ${form.name || "Tool Details"}`}
-              {!isNew && (
-                <span className="text-xs font-normal text-muted-foreground px-2 py-0.5 rounded-full border border-border bg-background">
-                  {form.status}
-                </span>
-              )}
+            <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
+              {isNew ? "Create AI Tool" : `Edit Tool: ${form.tool_name || "Details"}`}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Ready for AI Generation integration upgrades.
+              Redesigned around the unified production schema.
             </p>
           </div>
           <button
@@ -487,1033 +429,393 @@ export function ToolEditor({
         </div>
 
         {/* Content Form Scrollable area */}
-        {!isPreviewMode ? (
-          <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-            {form.needs_review && (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-700 dark:text-amber-400 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-                  <span>
-                    <strong>Attention Needed:</strong> AI generation completed but requires review.
-                    Check basic fields, descriptions, and tags.
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 text-xs shrink-0 bg-background"
-                  onClick={() => setForm((prev) => ({ ...prev, needs_review: false }))}
-                >
-                  Clear Review Flag
-                </Button>
-              </div>
-            )}
-
-            {/* SECTION 0 — AI Import (Disabled placeholders) */}
-            <div className="rounded-2xl border-2 border-dashed border-purple-500/20 bg-purple-500/5 p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-purple-500/10 text-purple-600 dark:text-purple-300 px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-xl border-l border-b border-purple-500/20">
-                AI Import — Coming Soon
-              </div>
-              <h3 className="text-sm font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1.5 mb-2">
-                <Sparkles className="h-4 w-4 text-purple-500" /> AI-Powered Import
-              </h3>
-              <p className="text-xs text-muted-foreground mb-4 max-w-xl">
-                Ready for AI Agent Integration. In the future, this section will allow typing a URL to completely auto-fill pricing, categories, capabilities, platforms, and descriptions.
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+          {/* AI Scraper Integrator */}
+          <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-purple-500" /> AI Autocomplete
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Enter the official website URL below, then click to scrape and auto-fill metadata with Gemini AI.
               </p>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Import Source URL</span>
-                  <input
-                    disabled
-                    type="url"
-                    placeholder="https://example.com"
-                    className="w-full h-10 px-3 border border-border rounded-lg bg-surface/50 text-muted-foreground cursor-not-allowed text-sm"
-                  />
-                </div>
-                <div className="flex flex-wrap items-end gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled
-                    onClick={() => showComingSoon("Generate From Website")}
-                    className="h-10 border-purple-500/25 text-purple-600 dark:text-purple-300 hover:bg-purple-500/5 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                  >
-                    Generate From Website
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled
-                    onClick={() => showComingSoon("Refresh AI Data")}
-                    className="h-10 text-xs"
-                  >
-                    Refresh AI Data
-                  </Button>
-                  <label className="flex items-center gap-2 cursor-not-allowed select-none text-xs text-muted-foreground h-10">
-                    <input
-                      disabled
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-border cursor-not-allowed"
-                    />
-                    Force Update
-                  </label>
-                </div>
-              </div>
             </div>
+            <Button
+              type="button"
+              onClick={handleEnrich}
+              disabled={enriching || !form.website_url}
+              className="bg-purple-600 hover:bg-purple-700 text-white text-xs shrink-0 self-start sm:self-center"
+            >
+              {enriching ? (
+                <>
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Scraping...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-1 h-3.5 w-3.5" /> Scrape Site & Autocomplete
+                </>
+              )}
+            </Button>
+          </div>
 
-            {/* SECTION 1 — Basic Information */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">1</span>
-                Basic Information
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tool Name *</span>
-                  <input
-                    required
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        name: e.target.value,
-                        slug: form.slug || slugify(e.target.value),
-                      })
-                    }
-                    className={`input-style ${errors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    placeholder="e.g. Cursor"
-                  />
-                  {errors.name && <p className="text-[11px] text-destructive">{errors.name}</p>}
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Slug</span>
-                  <input
-                    value={form.slug}
-                    onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })}
-                    className={`input-style ${errors.slug ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    placeholder="e.g. cursor-ai"
-                  />
-                  {errors.slug && <p className="text-[11px] text-destructive">{errors.slug}</p>}
-                </div>
+          {/* Section 1 — Identification & URLs */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              1. Basic Information
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Tool Name *
+                </span>
+                <input
+                  required
+                  value={form.tool_name}
+                  onChange={(e) => setForm({ ...form, tool_name: e.target.value })}
+                  className={`input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+                    errors.tool_name ? "border-destructive focus-visible:ring-destructive" : ""
+                  }`}
+                  placeholder="e.g. Cursor"
+                />
+                {errors.tool_name && <p className="text-[11px] text-destructive">{errors.tool_name}</p>}
               </div>
 
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Official Website URL *</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Official Website URL *
+                </span>
                 <input
                   required
                   type="url"
                   value={form.website_url}
                   onChange={(e) => setForm({ ...form, website_url: e.target.value })}
-                  className={`input-style ${errors.website_url ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                  placeholder="https://example.com"
+                  className={`input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+                    errors.website_url ? "border-destructive focus-visible:ring-destructive" : ""
+                  }`}
+                  placeholder="https://cursor.com"
                 />
-                {errors.website_url && <p className="text-[11px] text-destructive">{errors.website_url}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Affiliate Website URL</span>
-                <input
-                  type="url"
-                  value={form.affiliate_url}
-                  onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })}
-                  className={`input-style ${errors.affiliate_url ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                  placeholder="https://partner.com/ref-code"
-                />
-                {errors.affiliate_url && <p className="text-[11px] text-destructive">{errors.affiliate_url}</p>}
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Logo URL</span>
-                  <input
-                    value={form.logo_url}
-                    onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-                    className={`input-style ${errors.logo_url ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    placeholder="https://example.com/logo.png"
-                  />
-                  {errors.logo_url && <p className="text-[11px] text-destructive">{errors.logo_url}</p>}
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Hero Image URL (Cover)</span>
-                  <input
-                    value={form.cover_url}
-                    onChange={(e) => setForm({ ...form, cover_url: e.target.value })}
-                    className={`input-style ${errors.cover_url ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    placeholder="https://example.com/hero.png"
-                  />
-                  {errors.cover_url && <p className="text-[11px] text-destructive">{errors.cover_url}</p>}
-                </div>
+                {errors.website_url && (
+                  <p className="text-[11px] text-destructive">{errors.website_url}</p>
+                )}
               </div>
             </div>
 
-            {/* SECTION 2 — AI Content */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">2</span>
-                AI Content & Summaries
-              </h3>
-
+            {!isNew && (
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">One-line Summary *</span>
-                  <span className={`text-[10px] tabular-nums ${form.short_description.length > 200 ? "text-destructive" : "text-muted-foreground"}`}>
-                    {form.short_description.length}/200
-                  </span>
-                </div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Slug (Auto-generated URL identifier)
+                </span>
                 <input
-                  required
-                  maxLength={250}
-                  value={form.short_description}
-                  onChange={(e) => setForm({ ...form, short_description: e.target.value })}
-                  className="input-style"
-                  placeholder="e.g. Next-generation AI code editor built on VS Code."
+                  readOnly
+                  disabled
+                  value={form.slug}
+                  className="input-style h-10 w-full rounded-md border border-border bg-muted/40 px-3 text-sm cursor-not-allowed"
+                />
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Company Name
+                </span>
+                <input
+                  value={form.company_name}
+                  onChange={(e) => setForm({ ...form, company_name: e.target.value })}
+                  className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="e.g. Anysphere"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Short Description (Key Summary)</span>
-                  <span className={`text-[10px] tabular-nums ${form.key_summary.length > 1000 ? "text-destructive" : "text-muted-foreground"}`}>
-                    {form.key_summary.length}/1000
-                  </span>
-                </div>
-                <textarea
-                  rows={2}
-                  maxLength={1100}
-                  value={form.key_summary}
-                  onChange={(e) => setForm({ ...form, key_summary: e.target.value })}
-                  className="input-style min-h-[60px]"
-                  placeholder="2-3 sentence summary explaining the tool's core value proposition..."
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Full Description</span>
-                  <span className={`text-[10px] tabular-nums ${form.full_description.length > 3000 ? "text-destructive" : "text-muted-foreground"}`}>
-                    {form.full_description.length}/3000
-                  </span>
-                </div>
-                <textarea
-                  rows={5}
-                  maxLength={3200}
-                  value={form.full_description}
-                  onChange={(e) => setForm({ ...form, full_description: e.target.value })}
-                  className="input-style min-h-[120px]"
-                  placeholder="Provide a detailed description of features, capabilities, limits, models used..."
-                />
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Key Features (One per line)</span>
-                <textarea
-                  rows={3}
-                  value={form.features}
-                  onChange={(e) => setForm({ ...form, features: e.target.value })}
-                  className="input-style min-h-[80px]"
-                  placeholder="AI Autocomplete&#10;In-chat terminal editing&#10;Custom model selection"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Best For (One per line)</span>
-                  <textarea
-                    rows={3}
-                    value={form.best_for}
-                    onChange={(e) => setForm({ ...form, best_for: e.target.value })}
-                    className="input-style min-h-[80px]"
-                    placeholder="Software engineers&#10;Large repositories&#10;Fast prototyping"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Not Good For (One per line)</span>
-                  <textarea
-                    rows={3}
-                    value={form.not_good_for}
-                    onChange={(e) => setForm({ ...form, not_good_for: e.target.value })}
-                    className="input-style min-h-[80px]"
-                    placeholder="Non-coders&#10;Offline programming"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block">Best Use Cases</span>
-                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg border border-border bg-surface/20 max-h-48 overflow-y-auto">
-                  {USE_CASE_TAXONOMY.map((uc) => {
-                    const isChecked = form.use_cases.includes(uc);
-                    return (
-                      <label key={uc} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {
-                            setForm({
-                              ...form,
-                              use_cases: isChecked
-                                ? form.use_cases.filter((x) => x !== uc)
-                                : [...form.use_cases, uc],
-                            });
-                          }}
-                          className="h-4 w-4 rounded border-border"
-                        />
-                        {uc}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 3 — Classification */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">3</span>
-                Classification & Taxonomy
-              </h3>
-
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Category</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Primary Category *
+                </span>
                 <select
-                  value={form.category_id}
-                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                  className="input-style bg-background"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="">— Select Category —</option>
-                  {cats.data?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
+                  {COMMON_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+          </div>
 
-              <div className="space-y-1.5">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block">Subcategories / Secondary Categories</span>
-                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg border border-border bg-surface/20 max-h-40 overflow-y-auto">
-                  {cats.data
-                    ?.filter((c) => c.id !== form.category_id)
-                    .map((c) => {
-                      const isChecked = form.secondary_categories.includes(c.id);
-                      return (
-                        <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              setForm({
-                                ...form,
-                                secondary_categories: isChecked
-                                  ? form.secondary_categories.filter((x) => x !== c.id)
-                                  : [...form.secondary_categories, c.id],
-                              });
-                            }}
-                            className="h-4 w-4 rounded border-border"
-                          />
-                          {c.name}
-                        </label>
-                      );
-                    })}
-                </div>
-              </div>
+          {/* Section 2 — Descriptions & Tagline */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              2. Descriptions & Tagline
+            </h3>
 
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Capabilities (Taxonomy Tags)</span>
-                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg border border-border bg-surface/20 max-h-48 overflow-y-auto">
-                  {CAPABILITY_TAXONOMY.map((cap) => {
-                    const isChecked = form.capabilities.includes(cap);
-                    return (
-                      <label key={cap} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {
-                            setForm({
-                              ...form,
-                              capabilities: isChecked
-                                ? form.capabilities.filter((x) => x !== cap)
-                                : [...form.capabilities, cap],
-                            });
-                          }}
-                          className="h-4 w-4 rounded border-border"
-                        />
-                        {cap}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Industries</span>
-                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg border border-border bg-surface/20 max-h-40 overflow-y-auto">
-                  {INDUSTRY_TAXONOMY.map((ind) => {
-                    const isChecked = form.industries.includes(ind);
-                    return (
-                      <label key={ind} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {
-                            setForm({
-                              ...form,
-                              industries: isChecked
-                                ? form.industries.filter((x) => x !== ind)
-                                : [...form.industries, ind],
-                            });
-                          }}
-                          className="h-4 w-4 rounded border-border"
-                        />
-                        {ind}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Search Tags (Comma separated)</span>
-                <input
-                  value={form.tags}
-                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                  className="input-style"
-                  placeholder="e.g. editor, coding, dev-tools, agent"
-                />
-              </div>
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Tagline
+              </span>
+              <input
+                value={form.tagline}
+                onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+                className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="A brief tagline description"
+              />
             </div>
 
-            {/* SECTION 4 — Pricing & Platform */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">4</span>
-                Pricing & Platform Options
-              </h3>
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Short Description *
+              </span>
+              <textarea
+                required
+                rows={2}
+                value={form.short_description}
+                onChange={(e) => setForm({ ...form, short_description: e.target.value })}
+                className="input-style w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Brief summary used in listings (limit 500 chars)"
+              />
+            </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pricing Model</span>
-                  <select
-                    value={form.pricing}
-                    onChange={(e) => setForm({ ...form, pricing: e.target.value })}
-                    className="input-style bg-background"
-                  >
-                    {["free", "freemium", "paid", "subscription", "one_time", "contact"].map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pricing Details (Info/Limits)</span>
-                  <input
-                    value={form.pricing_details}
-                    onChange={(e) => setForm({ ...form, pricing_details: e.target.value })}
-                    className="input-style"
-                    placeholder="e.g. Free plan has 50 requests/mo. Pro at $20/mo."
-                  />
-                </div>
-              </div>
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Full Description
+              </span>
+              <textarea
+                rows={5}
+                value={form.full_description}
+                onChange={(e) => setForm({ ...form, full_description: e.target.value })}
+                className="input-style w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Detailed explanation of features, tools, and background..."
+              />
+            </div>
+          </div>
 
+          {/* Section 3 — Pricing */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              3. Pricing Details
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supported Platforms (Comma separated)</span>
-                <input
-                  value={form.platforms}
-                  onChange={(e) => setForm({ ...form, platforms: e.target.value })}
-                  placeholder="Web, Windows, Mac, iOS, Android"
-                  className="input-style"
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3 pt-2">
-                <Toggle
-                  label="API Available"
-                  checked={form.compare_data.api}
-                  onChange={(v) =>
-                    setForm({ ...form, compare_data: { ...form.compare_data, api: v } })
-                  }
-                />
-                <Toggle
-                  label="Browser Extension"
-                  checked={form.compare_data.browser_extension}
-                  onChange={(v) =>
-                    setForm({ ...form, compare_data: { ...form.compare_data, browser_extension: v } })
-                  }
-                />
-                <Toggle
-                  label="Mobile App"
-                  checked={form.compare_data.mobile_app}
-                  onChange={(v) =>
-                    setForm({ ...form, compare_data: { ...form.compare_data, mobile_app: v } })
-                  }
-                />
-              </div>
-
-              <div className="rounded-lg border border-border bg-surface/30 p-4 mt-2 space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                  Structured Metrics (Compare Dashboard)
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Pricing Model
                 </span>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Coding Quality</span>
-                    <select
-                      value={form.compare_data.coding_quality}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          compare_data: { ...form.compare_data, coding_quality: e.target.value },
-                        })
-                      }
-                      className="input-style text-xs h-8 bg-background"
-                    >
-                      {["Excellent", "Good", "Basic"].map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          {lvl}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Writing Quality</span>
-                    <select
-                      value={form.compare_data.writing_quality}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          compare_data: { ...form.compare_data, writing_quality: e.target.value },
-                        })
-                      }
-                      className="input-style text-xs h-8 bg-background"
-                    >
-                      {["Excellent", "Good", "Basic"].map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          {lvl}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Research Quality</span>
-                    <select
-                      value={form.compare_data.research}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          compare_data: { ...form.compare_data, research: e.target.value },
-                        })
-                      }
-                      className="input-style text-xs h-8 bg-background"
-                    >
-                      {["Excellent", "Good", "Basic"].map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          {lvl}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-3 pt-1">
-                  <Toggle
-                    label="Image Gen"
-                    checked={form.compare_data.image_generation}
-                    onChange={(v) =>
-                      setForm({ ...form, compare_data: { ...form.compare_data, image_generation: v } })
-                    }
-                  />
-                  <Toggle
-                    label="Video Gen"
-                    checked={form.compare_data.video_generation}
-                    onChange={(v) =>
-                      setForm({ ...form, compare_data: { ...form.compare_data, video_generation: v } })
-                    }
-                  />
-                  <Toggle
-                    label="Voice/Audio"
-                    checked={form.compare_data.voice}
-                    onChange={(v) =>
-                      setForm({ ...form, compare_data: { ...form.compare_data, voice: v } })
-                    }
-                  />
-                  <Toggle
-                    label="Web Search"
-                    checked={form.compare_data.web_search}
-                    onChange={(v) =>
-                      setForm({ ...form, compare_data: { ...form.compare_data, web_search: v } })
-                    }
-                  />
-                  <Toggle
-                    label="File Upload"
-                    checked={form.compare_data.file_upload}
-                    onChange={(v) =>
-                      setForm({ ...form, compare_data: { ...form.compare_data, file_upload: v } })
-                    }
-                  />
-                </div>
+                <select
+                  value={form.pricing || "free"}
+                  onChange={(e) => setForm({ ...form, pricing: e.target.value })}
+                  className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="free">Free</option>
+                  <option value="freemium">Freemium</option>
+                  <option value="paid">Paid</option>
+                  <option value="subscription">Subscription</option>
+                  <option value="contact">Contact Sales</option>
+                </select>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Strengths (One per line)</span>
-                  <textarea
-                    rows={3}
-                    value={form.pros}
-                    onChange={(e) => setForm({ ...form, pros: e.target.value })}
-                    className="input-style min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Limitations (One per line)</span>
-                  <textarea
-                    rows={3}
-                    value={form.cons}
-                    onChange={(e) => setForm({ ...form, cons: e.target.value })}
-                    className="input-style min-h-[80px]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 5 — SEO */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">5</span>
-                Search Engine Optimization (SEO)
-              </h3>
 
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">SEO Title</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Pricing Description / Extra Details
+                </span>
+                <input
+                  value={form.pricing_details}
+                  onChange={(e) => setForm({ ...form, pricing_details: e.target.value })}
+                  className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="e.g. Free tier available, pro plans start at $20/mo"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4 — Array Lists */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              4. Features & Taxonomy (Arrays)
+            </h3>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ArrayInput
+                label="Capabilities"
+                value={form.capabilities}
+                onChange={(val) => setForm({ ...form, capabilities: val })}
+                placeholder="e.g. AI Coding, AI Writing"
+              />
+              <ArrayInput
+                label="Search Tags"
+                value={form.search_tags}
+                onChange={(val) => setForm({ ...form, search_tags: val })}
+                placeholder="e.g. agentic, code editor"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ArrayInput
+                label="Features"
+                value={form.features}
+                onChange={(val) => setForm({ ...form, features: val })}
+                placeholder="e.g. Autocomplete tab, Chat pane"
+              />
+              <ArrayInput
+                label="Use Cases"
+                value={form.use_cases}
+                onChange={(val) => setForm({ ...form, use_cases: val })}
+                placeholder="e.g. Coding automation, Studying"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ArrayInput
+                label="Best For"
+                value={form.best_for}
+                onChange={(val) => setForm({ ...form, best_for: val })}
+                placeholder="e.g. Developers, Startups"
+              />
+              <ArrayInput
+                label="Integrations"
+                value={form.integrations}
+                onChange={(val) => setForm({ ...form, integrations: val })}
+                placeholder="e.g. GitHub, Slack"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <ArrayInput
+                label="Sub Categories"
+                value={form.sub_category}
+                onChange={(val) => setForm({ ...form, sub_category: val })}
+                placeholder="e.g. Editor, CLI"
+              />
+              <ArrayInput
+                label="Platforms"
+                value={form.platforms}
+                onChange={(val) => setForm({ ...form, platforms: val })}
+                placeholder="e.g. Web, Mac, Windows"
+              />
+              <ArrayInput
+                label="Languages"
+                value={form.languages}
+                onChange={(val) => setForm({ ...form, languages: val })}
+                placeholder="e.g. English, French"
+              />
+            </div>
+          </div>
+
+          {/* Section 5 — Boolean Toggle Switches */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              5. Options & Status (Toggles)
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <ToggleSwitch
+                label="Free Plan Available"
+                checked={form.free_plan}
+                onChange={(val) => setForm({ ...form, free_plan: val })}
+              />
+              <ToggleSwitch
+                label="API Available"
+                checked={form.api_available}
+                onChange={(val) => setForm({ ...form, api_available: val })}
+              />
+              <ToggleSwitch
+                label="Browser Extension"
+                checked={form.browser_extension}
+                onChange={(val) => setForm({ ...form, browser_extension: val })}
+              />
+              <ToggleSwitch
+                label="Mobile App Available"
+                checked={form.mobile_app}
+                onChange={(val) => setForm({ ...form, mobile_app: val })}
+              />
+              <ToggleSwitch
+                label="Featured Tool"
+                checked={form.featured}
+                onChange={(val) => setForm({ ...form, featured: val })}
+              />
+              <ToggleSwitch
+                label="Is Published"
+                checked={form.is_published}
+                onChange={(val) => setForm({ ...form, is_published: val })}
+              />
+            </div>
+          </div>
+
+          {/* Section 6 — Media Previews */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              6. Media Assets
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ImageInput
+                label="Logo Image URL"
+                value={form.logo_url}
+                onChange={(val) => setForm({ ...form, logo_url: val })}
+                placeholder="e.g. https://domain.com/logo.png"
+              />
+              <ImageInput
+                label="Hero Image URL (Cover)"
+                value={form.hero_image_url}
+                onChange={(val) => setForm({ ...form, hero_image_url: val })}
+                placeholder="e.g. https://domain.com/cover.jpg"
+              />
+            </div>
+          </div>
+
+          {/* Section 7 — SEO Fields */}
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+              7. SEO Metadata (Editable)
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  SEO Meta Title
+                </span>
                 <input
                   value={form.seo_title}
                   onChange={(e) => setForm({ ...form, seo_title: e.target.value })}
-                  className="input-style"
-                  placeholder="e.g. Cursor AI Code Editor Review, Features, Pricing"
+                  className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="e.g. Cursor AI - Best Code Assistant"
                 />
               </div>
 
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Meta Description</span>
-                <textarea
-                  rows={2}
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  SEO Meta Description
+                </span>
+                <input
                   value={form.seo_description}
                   onChange={(e) => setForm({ ...form, seo_description: e.target.value })}
-                  className="input-style min-h-[60px]"
-                  placeholder="Write a custom description optimized for Google search results..."
+                  className="input-style h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Search engine snippet text..."
                 />
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">OG Image URL (Social Share Image)</span>
-                <input
-                  value={form.seo_image}
-                  onChange={(e) => setForm({ ...form, seo_image: e.target.value })}
-                  className="input-style"
-                  placeholder="https://example.com/social-preview.png"
-                />
-              </div>
-            </div>
-
-            {/* SECTION 6 — Publishing & Flags */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">6</span>
-                Publishing & Status
-              </h3>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</span>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="input-style bg-background"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved / Published</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-                <div className="space-y-1 flex flex-col justify-end">
-                  {!isNew && (
-                    <span className="text-xs text-muted-foreground mb-2">
-                      <strong>Last Updated: </strong>
-                      {existing.data?.updated_at
-                        ? new Date(existing.data.updated_at).toLocaleString()
-                        : "Never"}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-4 pt-2">
-                <Toggle
-                  label="Featured (Highlight on top)"
-                  checked={form.featured}
-                  onChange={(v) => setForm({ ...form, featured: v })}
-                />
-                <Toggle
-                  label="Verified (Official Badge)"
-                  checked={form.verified}
-                  onChange={(v) => setForm({ ...form, verified: v })}
-                />
-                <Toggle
-                  label="Sponsored (Paid Promo)"
-                  checked={form.sponsored}
-                  onChange={(v) => setForm({ ...form, sponsored: v })}
-                />
-              </div>
-            </div>
-
-            {/* INTERNAL SYSTEM METADATA (Collapsible Section for AI prep) */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowMetadata(!showMetadata)}
-                className="w-full px-5 py-3 flex items-center justify-between bg-surface/20 border-b border-border text-sm font-semibold text-foreground"
-              >
-                <span className="flex items-center gap-2">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  Internal AI Agent Metadata (Hidden from Public Website)
-                </span>
-                {showMetadata ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              </button>
-
-              {showMetadata && (
-                <div className="p-5 space-y-4 bg-background">
-                  <div className="rounded border border-border bg-muted/20 p-3 text-xs text-muted-foreground flex items-start gap-2">
-                    <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>
-                      These metadata parameters are preserved internally for scheduling automated scrape/crawl tasks, tracking content provenance, and updating indexes automatically via background AI workflows.
-                    </span>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Source Crawler URL</span>
-                      <input
-                        value={form.source_url}
-                        onChange={(e) => setForm({ ...form, source_url: e.target.value })}
-                        className="input-style text-xs h-9"
-                        placeholder="https://crawl-source.com/tool-slug"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Import Source Identifier</span>
-                      <input
-                        value={form.import_source}
-                        onChange={(e) => setForm({ ...form, import_source: e.target.value })}
-                        className="input-style text-xs h-9"
-                        placeholder="e.g. bulk_import_csv, extension_scan"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">AI Generation Status / Flag</span>
-                      <select
-                        value={form.import_status}
-                        onChange={(e) => setForm({ ...form, import_status: e.target.value })}
-                        className="input-style text-xs h-9 bg-background"
-                      >
-                        <option value="">— None —</option>
-                        <option value="pending">Pending Enrichment</option>
-                        <option value="enriched">AI Enriched</option>
-                        <option value="failed">Enrichment Failed</option>
-                        <option value="verified">Manually Verified</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1 flex flex-col justify-end">
-                      <div className="flex flex-wrap gap-4 py-2">
-                        <Toggle
-                          label="Mark as AI Generated"
-                          checked={form.ai_generated}
-                          onChange={(v) => setForm({ ...form, ai_generated: v })}
-                        />
-                        <Toggle
-                          label="Manually Edited"
-                          checked={form.manually_edited}
-                          onChange={(v) => setForm({ ...form, manually_edited: v })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
-                    <div>
-                      <strong>AI Last Updated:</strong>{" "}
-                      {form.ai_last_updated ? new Date(form.ai_last_updated).toLocaleString() : "Never"}
-                    </div>
-                    <div>
-                      <strong>Last Verified:</strong>{" "}
-                      {form.last_verified ? new Date(form.last_verified).toLocaleString() : "Never"}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </form>
-        ) : (
-          /* PREVIEW MODE CONTENT */
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-surface/5">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary flex items-center justify-between">
-              <span className="font-medium flex items-center gap-2">
-                <Eye className="h-5 w-5" /> Previewing all edited data structure. Ensure values look correct.
-              </span>
-              <Button size="sm" onClick={() => setIsPreviewMode(false)}>
-                Back to Edit
-              </Button>
-            </div>
-
-            {/* Structured Preview Sheet */}
-            <div className="grid gap-6">
-              {/* Basic & Publishing Preview */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Basic & SEO Metadata</h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Tool Name:</span>{" "}
-                      <strong className="text-foreground">{form.name || "—"}</strong>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Slug:</span> <code className="bg-muted px-1.5 py-0.5 rounded text-xs">{form.slug || "—"}</code>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Website:</span>{" "}
-                      <a href={form.website_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                        {form.website_url || "—"}
-                      </a>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">SEO Title:</span>{" "}
-                      <span className="text-foreground">{form.seo_title || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">SEO Meta Description:</span>{" "}
-                      <p className="text-xs text-foreground mt-1 bg-muted/40 p-2 rounded">{form.seo_description || "—"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pricing & Platform</h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Pricing:</span>{" "}
-                      <span className="capitalize px-2 py-0.5 rounded bg-surface border border-border font-medium text-xs">
-                        {form.pricing}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Pricing Details:</span>{" "}
-                      <span className="text-foreground">{form.pricing_details || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Platforms:</span>{" "}
-                      <span className="text-foreground">{form.platforms || "—"}</span>
-                    </div>
-                    <div className="flex gap-4 pt-1">
-                      <div className="flex items-center gap-1">
-                        {form.compare_data.api ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
-                        <span className="text-xs">API</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {form.compare_data.browser_extension ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
-                        <span className="text-xs">Browser Extension</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {form.compare_data.mobile_app ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
-                        <span className="text-xs">Mobile App</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Descriptions & AI content */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Content Summary</h4>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">One-line Summary:</span>
-                    <p className="text-foreground bg-muted/20 p-2 rounded mt-1 font-medium">{form.short_description || "—"}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">Short Description:</span>
-                    <p className="text-foreground bg-muted/20 p-2 rounded mt-1 text-xs">{form.key_summary || "—"}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">Full Description:</span>
-                    <p className="text-foreground bg-muted/20 p-3 rounded mt-1 text-xs whitespace-pre-wrap leading-relaxed">
-                      {form.full_description || "—"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Classification & Taxonomy */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Classification & Tags</h4>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Primary Category:</span>{" "}
-                    <span className="font-semibold text-foreground">
-                      {cats.data?.find((c) => c.id === form.category_id)?.name || "—"}
-                    </span>
-                  </div>
-                  {form.secondary_categories.length > 0 && (
-                    <div>
-                      <span className="text-muted-foreground block mb-1">Secondary Categories:</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {form.secondary_categories.map((scid) => (
-                          <span key={scid} className="text-xs bg-muted px-2 py-0.5 rounded border border-border">
-                            {cats.data?.find((c) => c.id === scid)?.name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {form.capabilities.length > 0 && (
-                    <div>
-                      <span className="text-muted-foreground block mb-1">Capabilities:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {form.capabilities.map((cap) => (
-                          <span key={cap} className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                            {cap}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {form.tags && (
-                    <div>
-                      <span className="text-muted-foreground">Tags:</span>{" "}
-                      <span className="text-foreground">{form.tags}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Internal Metadata */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-2 text-xs">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Internal AI Audit Metadata</h4>
-                <div className="grid gap-3 sm:grid-cols-2 pt-2">
-                  <div>
-                    <span className="text-muted-foreground">Crawler Source URL:</span> {form.source_url || "—"}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Import Source ID:</span> {form.import_source || "—"}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">AI Generated:</span> {form.ai_generated ? "True" : "False"}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Last Crawl/Import Status:</span> {form.import_status || "—"}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
-        )}
+        </form>
 
-        {/* Sticky Footer */}
-        <div className="sticky bottom-0 border-t border-border bg-background px-6 py-4 flex flex-wrap justify-between items-center gap-4 bg-surface/30">
-          <div>
-            {!isPreviewMode ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleRegenerate}
-                disabled={regenerating || !form.website_url}
-                className="h-10 hover:bg-surface/50 border-purple-500/30 text-purple-600 dark:text-purple-300 gap-1.5"
-              >
-                {regenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                ) : (
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                )}
-                AI Auto-Generate
-              </Button>
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4 bg-surface/30">
+          <Button type="button" variant="outline" onClick={handleCloseAttempt}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={save.isPending}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
+            {save.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+              </>
             ) : (
-              <Button type="button" variant="outline" onClick={() => setIsPreviewMode(false)} className="gap-1">
-                Back to Edit
-              </Button>
+              "Save Changes"
             )}
-          </div>
-
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={handleCloseAttempt}>
-              Cancel
-            </Button>
-            {!isPreviewMode && (
-              <Button type="button" variant="outline" onClick={() => validate() && setIsPreviewMode(true)}>
-                <Eye className="mr-1.5 h-4 w-4 text-muted-foreground" /> Preview Changes
-              </Button>
-            )}
-            <Button
-              type="button"
-              onClick={handleFormSubmit}
-              disabled={save.isPending}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-            >
-              {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              {isNew ? "Create Tool Structure" : "Save changes"}
-            </Button>
-          </div>
+          </Button>
         </div>
       </div>
-
-      <style>{`
-        .input-style {
-          display: block;
-          width: 100%;
-          height: 40px;
-          border: 1px solid var(--color-border);
-          background: var(--color-background);
-          border-radius: 8px;
-          padding: 0 12px;
-          font-size: 14px;
-          color: var(--color-foreground);
-          transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-        .input-style:focus-visible {
-          outline: none;
-          border-color: var(--color-primary);
-          box-shadow: 0 0 0 2px var(--color-primary-ring);
-        }
-        textarea.input-style {
-          height: auto;
-          padding: 10px 12px;
-          line-height: 1.5;
-        }
-      `}</style>
     </div>
-  );
-}
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="inline-flex cursor-pointer items-center gap-2 text-sm select-none hover:opacity-90">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-border"
-      />
-      <span className="text-foreground font-medium text-xs">{label}</span>
-    </label>
   );
 }

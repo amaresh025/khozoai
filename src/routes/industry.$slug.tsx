@@ -34,7 +34,7 @@ function IndustryPage() {
 
   const tools = useQuery({
     queryKey: ["tools", "industry", industryName],
-    queryFn: async () => ((await Q.toolsByIndustry(industryName)).data as Tool[]) ?? [],
+    queryFn: async () => [] as Tool[],
   });
 
   return (

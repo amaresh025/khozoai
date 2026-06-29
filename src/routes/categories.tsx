@@ -12,7 +12,7 @@ export const Route = createFileRoute("/categories")({
       {
         name: "description",
         content:
-          "Browse AI tools by capability, use case, and industry. Find the right AI tool for any job.",
+          "Browse AI tools by capability and use case. Find the right AI tool for any job.",
       },
       { property: "og:title", content: "All AI Tool Categories — AI Tools Hub" },
       { property: "og:url", content: "/categories" },
@@ -30,10 +30,10 @@ function CategoriesPage() {
   const counts = useQuery({
     queryKey: ["categories", "counts"],
     queryFn: async () => {
-      const { data } = await supabase.from("tools").select("category_id").eq("status", "approved");
+      const { data } = await supabase.from("tools").select("category").eq("is_published", true);
       const m = new Map<string, number>();
       data?.forEach((r) => {
-        if (r.category_id) m.set(r.category_id, (m.get(r.category_id) ?? 0) + 1);
+        if (r.category) m.set(r.category.toLowerCase().trim(), (m.get(r.category.toLowerCase().trim()) ?? 0) + 1);
       });
       return m;
     },
@@ -47,10 +47,6 @@ function CategoriesPage() {
     queryKey: ["dynamic-use-cases"],
     queryFn: () => Q.dynamicUseCases(),
   });
-  const industries = useQuery({
-    queryKey: ["dynamic-industries"],
-    queryFn: () => Q.dynamicIndustries(),
-  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
@@ -58,7 +54,7 @@ function CategoriesPage() {
         All <span className="text-gradient">Categories</span>
       </h1>
       <p className="mt-2 text-muted-foreground">
-        Browse every AI tool by capability, use case, and industry.
+        Browse every AI tool by capability and use case.
       </p>
 
       {/* Dynamic Capability Categories */}
@@ -101,36 +97,16 @@ function CategoriesPage() {
         </section>
       )}
 
-      {/* Dynamic Industry Categories */}
-      {industries.data && industries.data.length > 0 && (
-        <section className="mt-16">
-          <h2 className="font-display text-2xl font-bold tracking-tight">
-            Browse by <span className="text-violet-600">Industry</span>
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Tools built for your sector.</p>
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {industries.data.map((ind) => (
-              <DynamicCategoryCard
-                key={ind.industry}
-                name={ind.industry}
-                count={ind.tool_count}
-                type="industry"
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Legacy categories for backward compatibility */}
+      {/* Standard categories */}
       {cats.data && cats.data.length > 0 && (
         <section className="mt-16">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            Legacy <span className="text-muted-foreground">Categories</span>
+            Standard <span className="text-muted-foreground">Categories</span>
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Original category listings.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Traditional categories list.</p>
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {cats.data.map((c) => (
-              <CategoryCard key={c.id} category={c} count={counts.data?.get(c.id)} />
+              <CategoryCard key={c.id} category={c} count={counts.data?.get(c.name.toLowerCase().trim())} />
             ))}
           </div>
         </section>

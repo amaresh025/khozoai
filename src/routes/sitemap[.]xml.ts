@@ -23,7 +23,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         let dynamicEntries: { path: string; changefreq: string; priority: string }[] = [];
         try {
           const [tools, cats, comps] = await Promise.all([
-            supabaseAdmin.from("tools").select("slug").eq("status", "approved"),
+            supabaseAdmin.from("tools").select("slug").eq("is_published", true),
             supabaseAdmin.from("categories").select("slug"),
             supabaseAdmin.from("tool_comparisons").select("slug"),
           ]);

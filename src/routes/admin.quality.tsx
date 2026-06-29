@@ -62,7 +62,7 @@ function QualityPage() {
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <Link
                 to="/tools/$slug"
-                params={{ slug: it.slug }}
+                params={{ slug: it.toolId }}
                 className="font-medium hover:underline"
               >
                 {it.name}
