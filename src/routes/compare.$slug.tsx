@@ -313,7 +313,7 @@ function Card({ tool }: { tool: Tool }) {
               <img
                 src={tool.logo_url}
                 alt=""
-                className="h-full w-full object-contain bg-background"
+                className="h-full w-full object-contain bg-white"
                 onError={(e) => (e.currentTarget.style.display = "none")}
               />
             ) : (

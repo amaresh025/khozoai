@@ -117,7 +117,7 @@ function AdminToolsPage() {
                         <img
                           src={t.logo_url}
                           alt=""
-                          className="h-6 w-6 rounded border border-border object-contain bg-background"
+                          className="h-6 w-6 rounded border border-border object-contain bg-white"
                           onError={(e) => (e.currentTarget.style.display = "none")}
                         />
                       )}

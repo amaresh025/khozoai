@@ -167,7 +167,7 @@ function ToolPicker({
       <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 h-12">
         <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded border border-border bg-surface">
           {value.logo_url ? (
-            <img src={value.logo_url} alt="" className="h-full w-full object-contain bg-background" />
+            <img src={value.logo_url} alt="" className="h-full w-full object-contain bg-white" />
           ) : (
             <span className="text-xs font-bold">{value.tool_name[0]}</span>
           )}
@@ -218,7 +218,7 @@ function ToolPicker({
             >
               <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded border border-border bg-surface">
                 {t.logo_url ? (
-                  <img src={t.logo_url} alt="" className="h-full w-full object-contain bg-background" />
+                  <img src={t.logo_url} alt="" className="h-full w-full object-contain bg-white" />
                 ) : (
                   <span className="text-xs font-bold">{t.tool_name[0]}</span>
                 )}

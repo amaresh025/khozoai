@@ -26,7 +26,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
               width={44}
               height={44}
               loading="lazy"
-              className="h-full w-full object-contain bg-background"
+              className="h-full w-full object-contain bg-white"
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           ) : (
