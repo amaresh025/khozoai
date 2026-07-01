@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Check, X } from "lucide-react";
+import { ExternalLink, Check } from "lucide-react";
 import { useEffect } from "react";
 import { Q, logEvent } from "@/lib/queries";
 import type { Tool } from "@/lib/queries";
@@ -28,6 +28,13 @@ function prettify(s: string) {
     .join(" ");
 }
 
+function isEmpty(val: any): boolean {
+  if (val === null || val === undefined) return true;
+  if (typeof val === "string") return val.trim() === "";
+  if (Array.isArray(val)) return val.length === 0;
+  return false;
+}
+
 function CompareDetail() {
   const { slug } = Route.useParams();
   const [aSlug, bSlug] = slug.split("-vs-");
@@ -46,276 +53,250 @@ function CompareDetail() {
     }
   }, [a.data?.id, b.data?.id, aSlug, bSlug]);
 
-  const renderBool = (val: boolean | null | undefined) => {
-    return val ? (
-      <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-        <Check className="h-4 w-4 shrink-0" /> Yes
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1 text-destructive font-semibold">
-        <X className="h-4 w-4 shrink-0" /> No
-      </span>
-    );
-  };
-
   if (a.isLoading || b.isLoading)
-    return <div className="mx-auto max-w-5xl px-4 py-20 text-center">Loading…</div>;
+    return <div className="mx-auto max-w-5xl px-4 py-20 text-center text-muted-foreground font-medium animate-pulse">Loading comparison…</div>;
+  
   if (!a.data || !b.data)
     return (
       <div className="mx-auto max-w-5xl px-4 py-20 text-center">
-        <h1 className="font-display text-3xl font-bold">Comparison not found</h1>
-        <Link to="/compare" className="mt-4 inline-block text-primary">
+        <h1 className="font-display text-3xl font-bold text-foreground">Comparison not found</h1>
+        <Link to="/compare" className="mt-4 inline-block text-primary hover:underline">
           ← Back to compare
         </Link>
       </div>
     );
 
+  const taglineA = a.data.tagline;
+  const taglineB = b.data.tagline;
+  
+  const capabilityA = a.data.capabilities;
+  const capabilityB = b.data.capabilities;
+
+  const categoryA = a.data.category;
+  const categoryB = b.data.category;
+
+  const subCategoryA = a.data.sub_category;
+  const subCategoryB = b.data.sub_category;
+
+  const pricingA = a.data.pricing;
+  const pricingDetailsA = a.data.pricing_details;
+  const pricingB = b.data.pricing;
+  const pricingDetailsB = b.data.pricing_details;
+
+  const bestForA = a.data.best_for;
+  const bestForB = b.data.best_for;
+
+  const showTagline = !isEmpty(taglineA) || !isEmpty(taglineB);
+  const showCapability = !isEmpty(capabilityA) || !isEmpty(capabilityB);
+  const showCategory = !isEmpty(categoryA) || !isEmpty(categoryB);
+  const showSubCategory = !isEmpty(subCategoryA) || !isEmpty(subCategoryB);
+  const showPricing = (!isEmpty(pricingA) || !isEmpty(pricingDetailsA)) || (!isEmpty(pricingB) || !isEmpty(pricingDetailsB));
+  const showBestFor = !isEmpty(bestForA) || !isEmpty(bestForB);
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <Link to="/compare" className="text-sm text-muted-foreground hover:text-foreground">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+      <Link
+        to="/compare"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
         ← All comparisons
       </Link>
-      <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-        {a.data.tool_name} <span className="text-muted-foreground">vs</span> {b.data.tool_name}
+      <h1 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
+        {a.data.tool_name} <span className="text-muted-foreground font-normal">vs</span> {b.data.tool_name}
       </h1>
-      <p className="mt-2 text-muted-foreground">
-        A side-by-side comparison of features, pricing, and capabilities.
+      <p className="mt-2 text-muted-foreground text-sm sm:text-base">
+        A side-by-side comparison of key capabilities, pricing, and details.
       </p>
 
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
+      {/* Comparison cards */}
+      <div className="mt-8 grid gap-6 md:grid-cols-2 items-stretch">
         <Card tool={a.data} />
         <Card tool={b.data} />
       </div>
 
-      <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed min-w-[650px]">
-            <thead className="bg-surface text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="w-1/4 px-5 py-4 text-left font-semibold">Specification</th>
-                <th className="px-5 py-4 text-left font-semibold">{a.data.tool_name}</th>
-                <th className="px-5 py-4 text-left font-semibold">{b.data.tool_name}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Row
-                label="Tagline"
-                a={<p className="text-sm italic text-muted-foreground">{a.data.tagline || "—"}</p>}
-                b={<p className="text-sm italic text-muted-foreground">{b.data.tagline || "—"}</p>}
-              />
-              <Row
-                label="Description"
-                a={<p className="text-muted-foreground leading-relaxed text-sm">{a.data.short_description}</p>}
-                b={<p className="text-muted-foreground leading-relaxed text-sm">{b.data.short_description}</p>}
-              />
-              <Row
-                label="Category"
-                a={a.data.category ?? "—"}
-                b={b.data.category ?? "—"}
-              />
-              <Row
-                label="Sub Categories"
-                a={a.data.sub_category && a.data.sub_category.length > 0 ? a.data.sub_category.join(", ") : "—"}
-                b={b.data.sub_category && b.data.sub_category.length > 0 ? b.data.sub_category.join(", ") : "—"}
-              />
-              <Row
-                label="Target Use Cases"
-                a={
-                  <div className="flex flex-wrap gap-1">
-                    {a.data.use_cases && a.data.use_cases.length > 0
-                      ? a.data.use_cases.map((uc) => (
-                          <span
-                            key={uc}
-                            className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium"
-                          >
-                            {uc}
-                          </span>
-                        ))
-                      : "—"}
+      {/* Grid Comparison Table */}
+      <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="grid grid-cols-2 md:grid-cols-3">
+          {/* Header Row */}
+          <div className="hidden md:block px-6 py-4 bg-surface text-xs uppercase font-bold tracking-wider text-muted-foreground border-b border-border">
+            Specification
+          </div>
+          <div className="col-span-1 px-4 py-3.5 md:px-6 md:py-4 bg-surface text-xs md:text-sm font-bold md:font-semibold text-muted-foreground md:text-foreground border-b border-border flex items-center gap-2">
+            <span className="hidden md:inline text-xs font-normal text-muted-foreground uppercase">Tool A:</span> {a.data.tool_name}
+          </div>
+          <div className="col-span-1 px-4 py-3.5 md:px-6 md:py-4 bg-surface text-xs md:text-sm font-bold md:font-semibold text-muted-foreground md:text-foreground border-b border-border flex items-center gap-2">
+            <span className="hidden md:inline text-xs font-normal text-muted-foreground uppercase">Tool B:</span> {b.data.tool_name}
+          </div>
+
+          {/* Tagline Row */}
+          {showTagline && (
+            <RowGrid
+              label="Tagline"
+              a={!isEmpty(taglineA) ? <p className="text-sm italic text-muted-foreground leading-relaxed break-words">"{taglineA}"</p> : null}
+              b={!isEmpty(taglineB) ? <p className="text-sm italic text-muted-foreground leading-relaxed break-words">"{taglineB}"</p> : null}
+            />
+          )}
+
+          {/* Capability Row */}
+          {showCapability && (
+            <RowGrid
+              label="Capability"
+              a={
+                !isEmpty(capabilityA) ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {capabilityA.map((cap) => (
+                      <span
+                        key={cap}
+                        className="inline-flex items-center rounded-md bg-primary/5 px-2.5 py-1 text-xs text-primary font-medium border border-primary/15"
+                      >
+                        {cap}
+                      </span>
+                    ))}
                   </div>
-                }
-                b={
-                  <div className="flex flex-wrap gap-1">
-                    {b.data.use_cases && b.data.use_cases.length > 0
-                      ? b.data.use_cases.map((uc) => (
-                          <span
-                            key={uc}
-                            className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium"
-                          >
-                            {uc}
-                          </span>
-                        ))
-                      : "—"}
+                ) : null
+              }
+              b={
+                !isEmpty(capabilityB) ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {capabilityB.map((cap) => (
+                      <span
+                        key={cap}
+                        className="inline-flex items-center rounded-md bg-primary/5 px-2.5 py-1 text-xs text-primary font-medium border border-primary/15"
+                      >
+                        {cap}
+                      </span>
+                    ))}
                   </div>
-                }
-              />
-              <Row
-                label="Capabilities"
-                a={
-                  <div className="flex flex-wrap gap-1">
-                    {a.data.capabilities && a.data.capabilities.length > 0
-                      ? a.data.capabilities.map((cap) => (
-                          <span
-                            key={cap}
-                            className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium"
-                          >
-                            {cap}
-                          </span>
-                        ))
-                      : "—"}
+                ) : null
+              }
+            />
+          )}
+
+          {/* Category Row */}
+          {showCategory && (
+            <RowGrid
+              label="Category"
+              a={
+                !isEmpty(categoryA) ? (
+                  <span className="inline-flex items-center rounded-md bg-secondary/80 px-2.5 py-1 text-xs text-secondary-foreground font-medium border border-border">
+                    {categoryA}
+                  </span>
+                ) : null
+              }
+              b={
+                !isEmpty(categoryB) ? (
+                  <span className="inline-flex items-center rounded-md bg-secondary/80 px-2.5 py-1 text-xs text-secondary-foreground font-medium border border-border">
+                    {categoryB}
+                  </span>
+                ) : null
+              }
+            />
+          )}
+
+          {/* Sub Category Row */}
+          {showSubCategory && (
+            <RowGrid
+              label="Sub Category"
+              a={
+                !isEmpty(subCategoryA) ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {subCategoryA.map((sub) => (
+                      <span
+                        key={sub}
+                        className="inline-flex items-center rounded-md bg-secondary/80 px-2.5 py-1 text-xs text-secondary-foreground font-medium border border-border"
+                      >
+                        {sub}
+                      </span>
+                    ))}
                   </div>
-                }
-                b={
-                  <div className="flex flex-wrap gap-1">
-                    {b.data.capabilities && b.data.capabilities.length > 0
-                      ? b.data.capabilities.map((cap) => (
-                          <span
-                            key={cap}
-                            className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium"
-                          >
-                            {cap}
-                          </span>
-                        ))
-                      : "—"}
+                ) : null
+              }
+              b={
+                !isEmpty(subCategoryB) ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {subCategoryB.map((sub) => (
+                      <span
+                        key={sub}
+                        className="inline-flex items-center rounded-md bg-secondary/80 px-2.5 py-1 text-xs text-secondary-foreground font-medium border border-border"
+                      >
+                        {sub}
+                      </span>
+                    ))}
                   </div>
-                }
-              />
-              <Row
-                label="Best For"
-                a={
-                  a.data.best_for && a.data.best_for.length > 0 ? (
-                    <ul className="space-y-1 text-sm">
-                      {a.data.best_for.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                  )
-                }
-                b={
-                  b.data.best_for && b.data.best_for.length > 0 ? (
-                    <ul className="space-y-1 text-sm">
-                      {b.data.best_for.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                  )
-                }
-              />
-              <Row
-                label="Platforms"
-                a={a.data.platforms && a.data.platforms.length > 0 ? a.data.platforms.join(", ") : "—"}
-                b={b.data.platforms && b.data.platforms.length > 0 ? b.data.platforms.join(", ") : "—"}
-              />
-              <Row
-                label="Pricing"
-                a={
-                  <div>
-                    <span className="capitalize font-semibold text-foreground">{a.data.pricing}</span>
-                    {a.data.pricing_details && <p className="mt-1 text-xs text-muted-foreground">{a.data.pricing_details}</p>}
+                ) : null
+              }
+            />
+          )}
+
+          {/* Pricing Row */}
+          {showPricing && (
+            <RowGrid
+              label="Pricing"
+              a={
+                (!isEmpty(pricingA) || !isEmpty(pricingDetailsA)) ? (
+                  <div className="flex flex-col gap-1">
+                    {!isEmpty(pricingA) && (
+                      <span className="capitalize font-semibold text-foreground text-sm sm:text-base">
+                        {pricingA}
+                      </span>
+                    )}
+                    {!isEmpty(pricingDetailsA) && (
+                      <p className="text-xs text-muted-foreground leading-normal break-words">
+                        {pricingDetailsA}
+                      </p>
+                    )}
                   </div>
-                }
-                b={
-                  <div>
-                    <span className="capitalize font-semibold text-foreground">{b.data.pricing}</span>
-                    {b.data.pricing_details && <p className="mt-1 text-xs text-muted-foreground">{b.data.pricing_details}</p>}
+                ) : null
+              }
+              b={
+                (!isEmpty(pricingB) || !isEmpty(pricingDetailsB)) ? (
+                  <div className="flex flex-col gap-1">
+                    {!isEmpty(pricingB) && (
+                      <span className="capitalize font-semibold text-foreground text-sm sm:text-base">
+                        {pricingB}
+                      </span>
+                    )}
+                    {!isEmpty(pricingDetailsB) && (
+                      <p className="text-xs text-muted-foreground leading-normal break-words">
+                        {pricingDetailsB}
+                      </p>
+                    )}
                   </div>
-                }
-              />
-              <Row
-                label="Free plan"
-                a={renderBool(a.data.free_plan)}
-                b={renderBool(b.data.free_plan)}
-              />
-              <Row
-                label="Developer API"
-                a={renderBool(a.data.api_available)}
-                b={renderBool(b.data.api_available)}
-              />
-              <Row
-                label="Browser Extension"
-                a={renderBool(a.data.browser_extension)}
-                b={renderBool(b.data.browser_extension)}
-              />
-              <Row
-                label="Mobile App"
-                a={renderBool(a.data.mobile_app)}
-                b={renderBool(b.data.mobile_app)}
-              />
-              <Row
-                label="Integrations"
-                a={a.data.integrations && a.data.integrations.length > 0 ? a.data.integrations.join(", ") : "—"}
-                b={b.data.integrations && b.data.integrations.length > 0 ? b.data.integrations.join(", ") : "—"}
-              />
-              <Row
-                label="Key Features"
-                a={
-                  a.data.features && a.data.features.length > 0 ? (
-                    <ul className="list-disc pl-4 space-y-1 text-muted-foreground text-sm">
-                      {a.data.features.map((f, i) => (
-                        <li key={i}>{f}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    "—"
-                  )
-                }
-                b={
-                  b.data.features && b.data.features.length > 0 ? (
-                    <ul className="list-disc pl-4 space-y-1 text-muted-foreground text-sm">
-                      {b.data.features.map((f, i) => (
-                        <li key={i}>{f}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-              <Row
-                label="Languages"
-                a={a.data.languages && a.data.languages.length > 0 ? a.data.languages.join(", ") : "—"}
-                b={b.data.languages && b.data.languages.length > 0 ? b.data.languages.join(", ") : "—"}
-              />
-              <Row
-                label="Company Name"
-                a={a.data.company_name || "—"}
-                b={b.data.company_name || "—"}
-              />
-              <Row
-                label="Official website"
-                a={
-                  <a
-                    href={a.data.website_url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 text-xs font-semibold text-foreground shadow-xs hover:bg-accent transition-colors"
-                  >
-                    Visit website <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                }
-                b={
-                  <a
-                    href={b.data.website_url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 text-xs font-semibold text-foreground shadow-xs hover:bg-accent transition-colors"
-                  >
-                    Visit website <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                }
-              />
-            </tbody>
-          </table>
+                ) : null
+              }
+            />
+          )}
+
+          {/* Best For Row */}
+          {showBestFor && (
+            <RowGrid
+              label="Best For"
+              a={
+                !isEmpty(bestForA) ? (
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-muted-foreground">
+                    {bestForA.map((item, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 animate-in fade-in zoom-in duration-200" />
+                        <span className="break-words leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null
+              }
+              b={
+                !isEmpty(bestForB) ? (
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-muted-foreground">
+                    {bestForB.map((item, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 animate-in fade-in zoom-in duration-200" />
+                        <span className="break-words leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null
+              }
+            />
+          )}
         </div>
       </div>
     </div>
@@ -324,46 +305,50 @@ function CompareDetail() {
 
 function Card({ tool }: { tool: Tool }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-surface">
-          {tool.logo_url ? (
-            <img
-              src={tool.logo_url}
-              alt=""
-              className="h-full w-full object-contain bg-background"
-              onError={(e) => (e.currentTarget.style.display = "none")}
-            />
-          ) : (
-            <span className="font-display text-xl font-bold text-foreground/60">
-              {tool.tool_name[0]}
-            </span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-1.5 font-display text-lg font-bold tracking-tight">
-            {tool.tool_name}
-          </h2>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {tool.pricing && (
-              <span className="capitalize inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                {tool.pricing}
-              </span>
-            )}
-            {tool.category && (
-              <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                {tool.category}
+    <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm h-full transition-all duration-200 hover:shadow-md">
+      <div>
+        <div className="flex items-start gap-4">
+          <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-surface shadow-xs">
+            {tool.logo_url ? (
+              <img
+                src={tool.logo_url}
+                alt=""
+                className="h-full w-full object-contain bg-background"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            ) : (
+              <span className="font-display text-lg font-bold text-foreground/60">
+                {tool.tool_name[0]}
               </span>
             )}
           </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="flex items-center gap-1.5 font-display text-lg font-bold tracking-tight text-foreground break-words">
+              {tool.tool_name}
+            </h2>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {tool.pricing && (
+                <span className="capitalize inline-flex items-center rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {tool.pricing}
+                </span>
+              )}
+              {tool.category && (
+                <span className="inline-flex items-center rounded-md bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                  {tool.category}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
+        <p className="mt-4 text-sm text-muted-foreground leading-relaxed line-clamp-3">
+          {tool.short_description}
+        </p>
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">{tool.short_description}</p>
-      <div className="mt-4 flex gap-3 text-sm">
+      <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between text-sm">
         <Link
           to="/tools/$slug"
           params={{ slug: tool.slug }}
-          className="font-medium text-primary hover:underline"
+          className="font-medium text-primary hover:text-primary/80 transition-colors"
         >
           View details
         </Link>
@@ -371,39 +356,46 @@ function Card({ tool }: { tool: Tool }) {
           href={tool.website_url}
           target="_blank"
           rel="noreferrer noopener"
-          className="inline-flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          Visit <ExternalLink className="h-3 w-3" />
+          Visit website <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </div>
     </div>
   );
 }
 
-function Row({
+function RowGrid({
   label,
   a,
   b,
-  highlight,
 }: {
   label: string;
   a: React.ReactNode;
   b: React.ReactNode;
-  highlight?: "a" | "b" | null;
 }) {
   return (
-    <tr className="border-t border-border">
-      <td className="px-5 py-4 text-muted-foreground align-top font-medium w-1/4">{label}</td>
-      <td
-        className={`px-5 py-4 align-top font-medium ${highlight === "a" ? "text-primary font-semibold" : ""}`}
-      >
+    <>
+      {/* Mobile Label: Spans full width of mobile grid (2 cols) but hidden on desktop */}
+      <div className="col-span-2 md:hidden px-4 py-2 bg-surface/80 text-xs font-bold uppercase tracking-wider text-muted-foreground border-t border-b border-border/60">
+        {label}
+      </div>
+      
+      {/* Desktop Label: Stays in col 1, hidden on mobile */}
+      <div className="hidden md:flex col-span-1 px-6 py-6 font-display text-sm font-semibold text-muted-foreground border-b border-border items-center">
+        {label}
+      </div>
+
+      {/* Tool A Cell */}
+      <div className="col-span-1 px-4 py-4 md:px-6 md:py-6 border-r md:border-r-0 md:border-l border-border/50 md:border-b md:border-border min-w-0 flex flex-col justify-center">
         {a}
-      </td>
-      <td
-        className={`px-5 py-4 align-top font-medium ${highlight === "b" ? "text-primary font-semibold" : ""}`}
-      >
+      </div>
+
+      {/* Tool B Cell */}
+      <div className="col-span-1 px-4 py-4 md:px-6 md:py-6 md:border-l border-border/50 md:border-b md:border-border min-w-0 flex flex-col justify-center">
         {b}
-      </td>
-    </tr>
+      </div>
+    </>
   );
 }
+
